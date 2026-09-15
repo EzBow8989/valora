@@ -11,21 +11,29 @@ const bank = useBank(mode)
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 const SUITS = ['♠', '♥', '♦', '♣']
 const stake = ref(5)
-const current = ref(draw())
+const current = ref(dealCard())
 const next = ref(null)
 const busy = ref(false)
 const outcome = ref(null)
 
-function draw() {
-  const v = Math.floor(Math.random() * 13) + 1
+function suited() {
   const s = SUITS[Math.floor(Math.random() * 4)]
-  return { v, s, red: s === '♥' || s === '♦' }
+  return { s, red: s === '♥' || s === '♦' }
+}
+// The BETTING card is always mid-range (5–9) so neither side is ever a
+// near-certain "free money" bet. Both sides always keep 4–8 outs.
+function dealCard() {
+  return { v: 5 + Math.floor(Math.random() * 5), ...suited() }
+}
+// The REVEALED card is a full 1–13 draw (the actual outcome).
+function draw() {
+  return { v: Math.floor(Math.random() * 13) + 1, ...suited() }
 }
 const higherCount = computed(() => 13 - current.value.v)
 const lowerCount = computed(() => current.value.v - 1)
-// Ties lose, so a fair side pays (13/count)*houseEdge -> EV = 0.96 exactly.
-const payHigher = computed(() => (higherCount.value ? Math.max(1.01, (13 / higherCount.value) * 0.96) : 0))
-const payLower = computed(() => (lowerCount.value ? Math.max(1.01, (13 / lowerCount.value) * 0.96) : 0))
+// Ties lose (house edge). Fair side pays (13/count)*0.90 -> 10% house edge.
+const payHigher = computed(() => (higherCount.value ? Math.max(1.01, (13 / higherCount.value) * 0.90) : 0))
+const payLower = computed(() => (lowerCount.value ? Math.max(1.01, (13 / lowerCount.value) * 0.90) : 0))
 
 function guess(dir) {
   if (busy.value || !bank.canBet(stake.value)) return
@@ -44,8 +52,9 @@ function guess(dir) {
     else res = 'lose'
     if (win > 0) bank.win(win)
     bank.log(stake.value, win, 'Hi-Lo')
-    outcome.value = { res, win }
-    current.value = n
+    outcome.value = { res, win, card: n }
+    // Next betting card is always a fresh mid-range card (no near-sure bets).
+    current.value = dealCard()
     busy.value = false
   }, 450)
 }
@@ -56,20 +65,32 @@ function guess(dir) {
     <div class="left">
       <div class="table">
         <div class="cards">
-          <div class="cardface" :class="{ red: current.red }">
-            <span class="rank">{{ RANKS[current.v - 1] }}</span>
-            <span class="suit">{{ current.s }}</span>
+          <div class="cardslot">
+            <div class="cardface" :class="{ red: current.red }">
+              <span class="rank">{{ RANKS[current.v - 1] }}</span>
+              <span class="suit">{{ current.s }}</span>
+            </div>
+            <span class="clabel">Your card</span>
+          </div>
+          <span class="vs">→</span>
+          <div class="cardslot">
+            <div v-if="outcome" class="cardface" :class="{ red: outcome.card.red }">
+              <span class="rank">{{ RANKS[outcome.card.v - 1] }}</span>
+              <span class="suit">{{ outcome.card.s }}</span>
+            </div>
+            <div v-else class="cardface back">?</div>
+            <span class="clabel">Next card</span>
           </div>
         </div>
         <div class="out" :class="outcome && outcome.res">
           <template v-if="outcome">
             <b v-if="outcome.res === 'win'" class="win">Correct! +{{ bank.symbol.value }}{{ outcome.win.toFixed(2) }} 🎉</b>
-            <b v-else-if="outcome.res === 'tie'" class="push">Tie — no win (house edge)</b>
+            <b v-else-if="outcome.res === 'tie'" class="push">Tie ({{ RANKS[outcome.card.v - 1] }}) — house wins</b>
             <b v-else class="lose">Wrong guess</b>
           </template>
           <span v-else>Will the next card be higher or lower?</span>
         </div>
-        <p class="odds">A low → K high · <b>{{ higherCount }}</b> higher · <b>{{ lowerCount }}</b> lower · ties lose</p>
+        <p class="odds">A low → K high · <b>{{ higherCount }}</b> higher · <b>{{ lowerCount }}</b> lower · ties lose · 10% house edge</p>
       </div>
     </div>
 
@@ -89,11 +110,15 @@ function guess(dir) {
 <style scoped>
 .game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
 .table { background: radial-gradient(120% 120% at 50% 0%, #123a2a, #0b2019); border: 1px solid var(--line); border-radius: 18px; padding: 34px; text-align: center; }
-.cards { display: flex; justify-content: center; }
-.cardface { width: 130px; height: 182px; border-radius: 14px; background: #fff; color: #10141f; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+.cards { display: flex; justify-content: center; align-items: center; gap: 16px; }
+.cardslot { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.clabel { font-size: 11px; color: #9fd6c2; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.vs { font-size: 26px; color: #6ee7b7; font-weight: 900; }
+.cardface { width: 112px; height: 158px; border-radius: 14px; background: #fff; color: #10141f; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 16px 40px rgba(0,0,0,.4); }
 .cardface.red { color: #d32f4a; }
-.rank { font-size: 46px; font-weight: 900; line-height: 1; }
-.suit { font-size: 40px; }
+.cardface.back { background: repeating-linear-gradient(45deg, #1e1953, #1e1953 8px, #2a2270 8px, #2a2270 16px); color: rgba(255,255,255,.5); font-size: 44px; font-weight: 900; }
+.rank { font-size: 40px; font-weight: 900; line-height: 1; }
+.suit { font-size: 34px; }
 .out { margin-top: 22px; color: #bfeede; font-weight: 700; min-height: 24px; }
 .out .win { color: #6ee7b7; font-size: 18px; } .out .lose { color: #fca5a5; } .out .push { color: #fde68a; }
 .odds { margin: 10px 0 0; color: #9fd6c2; font-size: 12px; }

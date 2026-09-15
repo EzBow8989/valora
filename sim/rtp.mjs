@@ -28,8 +28,8 @@ const rnd = Math.random
 // ---- Crash (Liftoff) : rollCrash + fixed auto-cashout target ----
 function rollCrash() {
   const r = rnd()
-  if (r < 0.03) return 1.0
-  return Math.max(1.01, Math.floor((0.96 / (1 - r)) * 100) / 100)
+  if (r < 0.04) return 1.0
+  return Math.max(1.01, Math.floor((0.90 / (1 - r)) * 100) / 100)
 }
 function simCrash(target) {
   const out = []
@@ -53,7 +53,7 @@ function simMines(mines, k) {
     if (!alive) { out.push(0); continue }
     let m = 1
     for (let j = 0; j < k; j++) m *= (SIZE - j) / (SIZE - mines - j)
-    out.push(m * 0.97)
+    out.push(m * 0.90)
   }
   return stats(out)
 }
@@ -62,7 +62,7 @@ function simMines(mines, k) {
 function simDice(target, dir = 'over') {
   const out = []
   const chance = dir === 'over' ? 100 - target : target
-  const payout = Math.max(1.01, (100 / chance) * 0.98)
+  const payout = Math.max(1.01, (100 / chance) * 0.90)
   for (let i = 0; i < N; i++) {
     const r = Math.round(rnd() * 10000) / 100
     const won = dir === 'over' ? r > target : r < target
@@ -71,14 +71,14 @@ function simDice(target, dir = 'over') {
   return stats(out)
 }
 
-// ---- Wheel (Spin Fortune) : colour-bet, 20 segments ----
-const WHEEL = ['red','blue','red','green','red','blue','red','gold','red','blue','red','green','red','blue','red','gold','red','blue','red','green']
-const WMULT = { red: 1.92, blue: 3.84, green: 6.40, gold: 9.60 }
+// ---- Wheel (Spin Fortune) : colour-bet, 24 segments incl. 3 HOUSE ----
+const WHEEL = ['red','blue','red','green','red','blue','red','gold','red','blue','red','green','red','blue','red','gold','red','blue','red','green','house','blue','house','house']
+const WMULT = { red: 2.16, blue: 3.60, green: 7.20, gold: 10.80 }
 function simWheelColor(betColor) {
   const out = []
   for (let i = 0; i < N; i++) {
     const win = WHEEL[(rnd() * WHEEL.length) | 0]
-    out.push(win === betColor ? WMULT[betColor] : 0)
+    out.push(win === betColor ? WMULT[betColor] : 0) // house segments never match
   }
   return stats(out)
 }
@@ -112,11 +112,11 @@ function simPlinko(MULTS, rows) {
 function simHilo() {
   const out = []
   for (let i = 0; i < N; i++) {
-    const c = (rnd() * 13 | 0) + 1
+    const c = 5 + (rnd() * 5 | 0) // betting card constrained to 5..9
     const hi = 13 - c, lo = c - 1
     let dir, payWin
-    if (hi >= lo && hi > 0) { dir = 'hi'; payWin = Math.max(1.01, (13 / hi) * 0.96) }
-    else if (lo > 0) { dir = 'lo'; payWin = Math.max(1.01, (13 / lo) * 0.96) }
+    if (hi >= lo && hi > 0) { dir = 'hi'; payWin = Math.max(1.01, (13 / hi) * 0.90) }
+    else if (lo > 0) { dir = 'lo'; payWin = Math.max(1.01, (13 / lo) * 0.90) }
     else { dir = 'hi'; payWin = 0 }
     const n = (rnd() * 13 | 0) + 1
     if (n === c) out.push(0) // tie loses
@@ -135,7 +135,7 @@ const SYMS_NEW = [
   { s: 'cherry', w: 30, pay: 8 }, { s: 'bell', w: 22, pay: 12 }, { s: 'star', w: 16, pay: 22 },
   { s: 'clover', w: 12, pay: 38 }, { s: 'diamond', w: 8, pay: 80 }, { s: 'crown', w: 5, pay: 160 }, { s: 'seven', w: 3, pay: 500 },
 ]
-const MULTS = [10, 2.5, 1.1, 0.9, 0.4, 0.9, 1.1, 2.5, 10]
+const MULTS = [10, 2.5, 1.0, 0.8, 0.35, 0.8, 1.0, 2.5, 10]
 
 const P = (o) => `RTP ${o.rtp.toFixed(2)}% | win ${o.winRate.toFixed(1)}% loss ${o.lossRate.toFixed(1)}% push ${o.pushRate.toFixed(1)}% | max ${o.maxX.toFixed(2)}x`
 console.log(`Rounds per game: ${N.toLocaleString()}\n`)
@@ -144,13 +144,14 @@ console.log('Crash @2.0x  ', P(simCrash(2.0)))
 console.log('Crash @5.0x  ', P(simCrash(5.0)))
 console.log('Mines 3, k=3 ', P(simMines(3, 3)))
 console.log('Mines 5, k=2 ', P(simMines(5, 2)))
+console.log('Dice over 25 ', P(simDice(25)))
 console.log('Dice over 50 ', P(simDice(50)))
-console.log('Dice over 90 ', P(simDice(90)))
+console.log('Dice over 75 ', P(simDice(75)))
 console.log('Wheel RED    ', P(simWheelColor('red')))
 console.log('Wheel BLUE   ', P(simWheelColor('blue')))
 console.log('Wheel GREEN  ', P(simWheelColor('green')))
 console.log('Wheel GOLD   ', P(simWheelColor('gold')))
 console.log('Slots OLD    ', P(simSlots(SYMS_OLD, 0.5)))
-console.log('Slots NEW    ', P(simSlots(SYMS_NEW, 0.65)))
+console.log('Slots NEW    ', P(simSlots(SYMS_NEW, 0.55)))
 console.log('Plinko       ', P(simPlinko(MULTS, 8)))
 console.log('Hi-Lo        ', P(simHilo()))

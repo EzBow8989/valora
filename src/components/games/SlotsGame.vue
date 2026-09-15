@@ -58,8 +58,8 @@ function settle(final) {
     win = stake.value * payOf(final[0])
     label = `Three ${final[0]} — ${payOf(final[0])}×`
   } else if (final[0] === final[1] || final[1] === final[2] || final[0] === final[2]) {
-    win = stake.value * 0.65 // any pair returns 0.65x
-    label = 'Pair — 0.65×'
+    win = stake.value * 0.55 // any pair returns 0.55x
+    label = 'Pair — 0.55×'
   }
   if (win > 0) bank.win(win)
   bank.log(stake.value, win, 'Rune Reels (Slots)')

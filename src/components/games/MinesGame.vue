@@ -19,12 +19,12 @@ const lastWin = ref(0)
 const multiplier = computed(() => {
   let m = 1
   for (let i = 0; i < picks.value; i++) m *= (SIZE - i) / (SIZE - mineCount.value - i)
-  return m * 0.97
+  return m * 0.90
 })
 const nextMultiplier = computed(() => {
   let m = 1
   for (let i = 0; i <= picks.value; i++) m *= (SIZE - i) / (SIZE - mineCount.value - i)
-  return m * 0.97
+  return m * 0.90
 })
 
 function start() {

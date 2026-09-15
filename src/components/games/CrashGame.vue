@@ -21,8 +21,8 @@ let start = 0
 // ~4% house edge crash distribution
 function rollCrash() {
   const r = Math.random()
-  if (r < 0.03) return 1.0 // instant bust
-  return Math.max(1.01, Math.floor((0.96 / (1 - r)) * 100) / 100)
+  if (r < 0.04) return 1.0 // instant bust (~4% house edge)
+  return Math.max(1.01, Math.floor((0.90 / (1 - r)) * 100) / 100)
 }
 
 const progress = computed(() => 1 - 1 / mult.value)

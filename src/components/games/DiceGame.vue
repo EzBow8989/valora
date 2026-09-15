@@ -17,7 +17,8 @@ const outcome = ref(null) // 'win' | 'lose' | null
 const lastWin = ref(0)
 
 const chance = computed(() => (dir.value === 'over' ? 100 - target.value : target.value))
-const payout = computed(() => Math.max(1.01, (100 / chance.value) * 0.98))
+// 10% house edge; slider is capped to 25–75 so no near-certain bet exists.
+const payout = computed(() => Math.max(1.01, (100 / chance.value) * 0.90))
 
 function roll() {
   if (rolling.value || !bank.canBet(stake.value)) return
@@ -64,7 +65,7 @@ function roll() {
           <div class="fill" :class="dir" :style="dir === 'over' ? { left: target + '%', right: 0 } : { left: 0, width: target + '%' }"></div>
           <div v-if="result !== null" class="marker" :style="{ left: result + '%' }"></div>
         </div>
-        <input v-model.number="target" type="range" min="2" max="98" :disabled="rolling" />
+        <input v-model.number="target" type="range" min="25" max="75" :disabled="rolling" />
         <div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
       </div>
 

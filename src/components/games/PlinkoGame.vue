@@ -9,7 +9,7 @@ const mode = computed({ get: () => props.mode, set: (v) => emit('update:mode', v
 const bank = useBank(mode)
 
 const ROWS = 8
-const MULTS = [10, 2.5, 1.1, 0.9, 0.4, 0.9, 1.1, 2.5, 10] // ~0.98 EV
+const MULTS = [10, 2.5, 1.0, 0.8, 0.35, 0.8, 1.0, 2.5, 10] // ~0.90 EV (10% house edge)
 const MCLASS = (m) => (m >= 3 ? 'hi' : m >= 1 ? 'mid' : 'lo')
 
 const stake = ref(5)
