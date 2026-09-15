@@ -5,11 +5,14 @@ const props = defineProps({
   symbol: { type: String, default: '' },
   mode: { type: String, default: 'demo' },
   disabled: { type: Boolean, default: false },
+  min: { type: Number, default: 0.2 },
+  max: { type: Number, default: 250 }, // table limit — caps Martingale doubling
 })
 const emit = defineEmits(['update:stake', 'update:mode'])
 
 function set(v) {
-  v = Math.max(0.2, Math.round(v * 100) / 100)
+  if (isNaN(v)) v = props.min
+  v = Math.min(props.max, Math.max(props.min, Math.round(v * 100) / 100))
   emit('update:stake', v)
 }
 </script>
@@ -34,6 +37,7 @@ function set(v) {
         <button :disabled="disabled" @click="set(balance)">Max</button>
       </div>
     </label>
+    <p class="limits">Table limit · {{ symbol }}{{ min.toFixed(2) }} – {{ symbol }}{{ max.toFixed(0) }} per bet</p>
     <slot />
   </div>
 </template>
@@ -51,4 +55,5 @@ function set(v) {
 .row input:focus { border-color: var(--brand); }
 .row button { border: 1px solid var(--line); background: var(--panel-3); color: var(--text); border-radius: 9px; padding: 0 12px; font-weight: 800; font-size: 13px; }
 .row button:hover:not(:disabled) { background: var(--brand); }
+.limits { margin: -4px 0 0; color: var(--muted); font-size: 11px; }
 </style>

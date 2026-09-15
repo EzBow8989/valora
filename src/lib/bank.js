@@ -8,7 +8,8 @@ export function useBank(mode) {
   const store = useUserStore()
   const demo = ref(5000)
 
-  const balance = computed(() => (mode.value === 'demo' ? demo.value : store.balance))
+  // Real mode wagers the full spendable balance (cash + bonus).
+  const balance = computed(() => (mode.value === 'demo' ? demo.value : store.total))
   const symbol = computed(() => (mode.value === 'demo' ? '' : store.symbol))
   const isAuthed = computed(() => store.isAuthed)
 

@@ -146,10 +146,13 @@ export const useUserStore = defineStore('user', {
       return { ok: true, win }
     },
     // Low-level bankroll ops used by the playable Instant Games (real mode).
+    // Bonus funds are wagerable and spent first, then cash.
     stake(amount) {
       amount = Number(amount)
-      if (!(amount > 0) || amount > this.balance) return false
-      this.balance -= amount
+      if (!(amount > 0) || amount > this.balance + this.bonus) return false
+      const fromBonus = Math.min(this.bonus, amount)
+      this.bonus -= fromBonus
+      this.balance -= amount - fromBonus
       this.persist()
       return true
     },
