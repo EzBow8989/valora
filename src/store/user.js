@@ -145,6 +145,28 @@ export const useUserStore = defineStore('user', {
       this.persist()
       return { ok: true, win }
     },
+    // Low-level bankroll ops used by the playable Instant Games (real mode).
+    stake(amount) {
+      amount = Number(amount)
+      if (!(amount > 0) || amount > this.balance) return false
+      this.balance -= amount
+      this.persist()
+      return true
+    },
+    credit(amount) {
+      amount = Number(amount)
+      if (amount > 0) this.balance += amount
+      this.persist()
+    },
+    logBet(stakeAmt, win, game) {
+      this.transactions.unshift({
+        id: ref('BET'), kind: 'bet', method: game, amount: -Number(stakeAmt), win: Number(win) || 0,
+        currency: this.currency, status: 'settled', ts: Date.now(),
+      })
+      // keep history bounded
+      if (this.transactions.length > 200) this.transactions.length = 200
+      this.persist()
+    },
     setCurrency(c) {
       this.currency = c
       this.persist()
