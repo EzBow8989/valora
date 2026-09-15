@@ -9,14 +9,15 @@ const mode = computed({ get: () => props.mode, set: (v) => emit('update:mode', v
 const bank = useBank(mode)
 
 // weighted symbol pool (generic emblems, not branded characters)
+// Pays tuned so overall EV ≈ 0.947 (3-of-a-kind + a 0.65x "any pair").
 const SYMS = [
-  { s: '🍒', w: 30, pay: 3 },
-  { s: '🔔', w: 22, pay: 5 },
-  { s: '⭐', w: 16, pay: 8 },
-  { s: '🍀', w: 12, pay: 12 },
-  { s: '💎', w: 8, pay: 20 },
-  { s: '👑', w: 5, pay: 40 },
-  { s: '7️⃣', w: 3, pay: 100 },
+  { s: '🍒', w: 30, pay: 8 },
+  { s: '🔔', w: 22, pay: 12 },
+  { s: '⭐', w: 16, pay: 22 },
+  { s: '🍀', w: 12, pay: 38 },
+  { s: '💎', w: 8, pay: 80 },
+  { s: '👑', w: 5, pay: 160 },
+  { s: '7️⃣', w: 3, pay: 500 },
 ]
 const POOL = SYMS.flatMap((x) => Array(x.w).fill(x.s))
 const payOf = (s) => SYMS.find((x) => x.s === s).pay
@@ -57,8 +58,8 @@ function settle(final) {
     win = stake.value * payOf(final[0])
     label = `Three ${final[0]} — ${payOf(final[0])}×`
   } else if (final[0] === final[1] || final[1] === final[2] || final[0] === final[2]) {
-    win = stake.value * 0.5 // any pair returns half
-    label = 'Pair — 0.5×'
+    win = stake.value * 0.65 // any pair returns 0.65x
+    label = 'Pair — 0.65×'
   }
   if (win > 0) bank.win(win)
   bank.log(stake.value, win, 'Rune Reels (Slots)')
@@ -86,7 +87,7 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
           <b v-if="outcome.win > 0" class="win">{{ outcome.label }} · +{{ bank.symbol.value }}{{ outcome.win.toFixed(2) }} 🎉</b>
           <b v-else class="lose">No match — spin again</b>
         </template>
-        <span v-else>Match three symbols on the line to win up to 100×</span>
+        <span v-else>Match three symbols on the line to win up to 500×</span>
       </div>
 
       <div class="paytable">

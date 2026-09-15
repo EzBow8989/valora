@@ -23,8 +23,9 @@ function draw() {
 }
 const higherCount = computed(() => 13 - current.value.v)
 const lowerCount = computed(() => current.value.v - 1)
-const payHigher = computed(() => (higherCount.value ? Math.max(1.01, (13 / higherCount.value) * 0.98) : 0))
-const payLower = computed(() => (lowerCount.value ? Math.max(1.01, (13 / lowerCount.value) * 0.98) : 0))
+// Ties lose, so a fair side pays (13/count)*houseEdge -> EV = 0.96 exactly.
+const payHigher = computed(() => (higherCount.value ? Math.max(1.01, (13 / higherCount.value) * 0.96) : 0))
+const payLower = computed(() => (lowerCount.value ? Math.max(1.01, (13 / lowerCount.value) * 0.96) : 0))
 
 function guess(dir) {
   if (busy.value || !bank.canBet(stake.value)) return
@@ -37,7 +38,7 @@ function guess(dir) {
   setTimeout(() => {
     next.value = n
     let win = 0, res
-    if (n.v === current.value.v) { win = stake.value; res = 'push' } // tie returns stake
+    if (n.v === current.value.v) { win = 0; res = 'tie' } // tie loses (house edge)
     else if (dir === 'hi' && n.v > current.value.v) { win = stake.value * payHigher.value; res = 'win' }
     else if (dir === 'lo' && n.v < current.value.v) { win = stake.value * payLower.value; res = 'win' }
     else res = 'lose'
@@ -63,7 +64,7 @@ function guess(dir) {
         <div class="out" :class="outcome && outcome.res">
           <template v-if="outcome">
             <b v-if="outcome.res === 'win'" class="win">Correct! +{{ bank.symbol.value }}{{ outcome.win.toFixed(2) }} 🎉</b>
-            <b v-else-if="outcome.res === 'push'" class="push">Tie — stake returned</b>
+            <b v-else-if="outcome.res === 'tie'" class="push">Tie — no win (house edge)</b>
             <b v-else class="lose">Wrong guess</b>
           </template>
           <span v-else>Will the next card be higher or lower?</span>

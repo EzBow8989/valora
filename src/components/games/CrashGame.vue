@@ -52,6 +52,8 @@ function play() {
 
 function cashout() {
   if (phase.value !== 'running') return
+  // Can't cash out at or after the crash point — that round is already busted.
+  if (mult.value >= crashAt.value) { cancelAnimationFrame(raf); mult.value = crashAt.value; return end(false) }
   cancelAnimationFrame(raf)
   cashedAt.value = mult.value
   const win = stake.value * mult.value
@@ -85,6 +87,7 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
         <path :d="`M6 92 Q ${6 + progress*82} 92 ${6 + progress*82} ${100 - (8 + progress*72)}`"
               fill="none" :stroke="phase==='crashed' ? '#f87171' : '#22d3ee'" stroke-width="2" stroke-linecap="round" opacity="0.85" />
       </svg>
+      <div class="nose" :style="{ left: 6 + progress * 82 + '%', bottom: 8 + progress * 72 + '%' }"></div>
       <div class="rocket" :style="{ left: 6 + progress * 82 + '%', bottom: 8 + progress * 72 + '%' }">🚀</div>
 
       <div class="center">
@@ -117,7 +120,10 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 .hist .w { background: rgba(52,211,153,.18); color: var(--green); }
 .hist .l { background: rgba(248,113,113,.16); color: var(--red); }
 .trail { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rocket { position: absolute; font-size: 30px; transform: translate(-50%, 50%); transition: left .05s linear, bottom .05s linear; filter: drop-shadow(0 0 10px #22d3ee); }
+.nose { position: absolute; width: 14px; height: 14px; border-radius: 999px; background: radial-gradient(circle, #22d3ee, rgba(34,211,238,0) 70%); transform: translate(-50%, 50%); transition: left .05s linear, bottom .05s linear; pointer-events: none; z-index: 1; }
+.board.crashed .nose { background: radial-gradient(circle, #f87171, rgba(248,113,113,0) 70%); }
+/* rocket exhaust (its lower-left) sits on the trail tip */
+.rocket { position: absolute; font-size: 28px; line-height: 1; transform: translate(-18%, 18%); transition: left .05s linear, bottom .05s linear; filter: drop-shadow(0 0 8px #22d3ee); z-index: 2; }
 .board.crashed .rocket { filter: grayscale(1) drop-shadow(0 0 8px #f87171); }
 .center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; }
 .mult { font-size: clamp(38px, 8vw, 68px); font-weight: 900; letter-spacing: -.03em; text-shadow: 0 4px 30px rgba(34,211,238,.4); }
