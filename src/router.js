@@ -3,7 +3,8 @@ import HomeView from './views/HomeView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
-  { path: '/instant', name: 'instant', component: () => import('./views/InstantGamesView.vue'), meta: { title: 'Games' } },
+  { path: '/games', name: 'games', component: () => import('./views/InstantGamesView.vue'), meta: { title: 'Games' } },
+  { path: '/games/:cat', name: 'games-cat', component: () => import('./views/InstantGamesView.vue') },
   { path: '/instant/:game', name: 'play', component: () => import('./views/PlayView.vue') },
   { path: '/promotions', name: 'promotions', component: () => import('./views/PromotionsView.vue'), meta: { title: 'Promotions' } },
   { path: '/promotions/:id', name: 'promotion', component: () => import('./views/PromotionDetailView.vue') },
@@ -11,12 +12,13 @@ const routes = [
   { path: '/wallet', name: 'wallet', component: () => import('./views/WalletView.vue'), meta: { auth: true } },
   { path: '/account', name: 'account', component: () => import('./views/AccountView.vue'), meta: { auth: true } },
   { path: '/support', name: 'support', component: () => import('./views/SupportView.vue'), meta: { title: 'Help Center' } },
-  // legacy casino/catalog paths now redirect to the playable games hub
-  { path: '/slots', redirect: '/instant' },
-  { path: '/live-casino', redirect: '/instant' },
-  { path: '/table-games', redirect: '/instant' },
-  { path: '/jackpots', redirect: '/instant' },
-  { path: '/sports', redirect: '/instant' },
+  // category / legacy paths
+  { path: '/instant', redirect: '/games' },
+  { path: '/slots', redirect: '/games/slots' },
+  { path: '/table-games', redirect: '/games/table' },
+  { path: '/jackpots', redirect: '/games/jackpot' },
+  { path: '/live-casino', redirect: '/games/table' },
+  { path: '/sports', redirect: '/games' },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

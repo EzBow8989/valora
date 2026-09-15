@@ -127,6 +127,39 @@ function simHilo() {
   return stats(out)
 }
 
+// ---- Coin Flip ----
+function simCoin() {
+  const out = []
+  for (let i = 0; i < N; i++) out.push(rnd() < 0.5 ? 1.9 : 0)
+  return stats(out)
+}
+// ---- Dragon Tiger ----
+function simDragon(bet) {
+  const out = []
+  for (let i = 0; i < N; i++) {
+    const d = (rnd() * 13 | 0) + 1, t = (rnd() * 13 | 0) + 1
+    const w = d > t ? 'dragon' : t > d ? 'tiger' : 'tie'
+    const pay = bet === 'tie' ? 9 : 1.95
+    out.push(w === bet ? pay : 0)
+  }
+  return stats(out)
+}
+// ---- Roulette (single zero) ----
+const R_RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36])
+function simRoulette(kind) {
+  const out = []
+  for (let i = 0; i < N; i++) {
+    const n = rnd() * 37 | 0 // 0..36
+    let won, pay
+    if (kind === 'straight') { won = n === 7; pay = 36 }
+    else if (kind === 'red') { won = R_RED.has(n); pay = 2 }
+    else if (kind === 'dozen') { won = n >= 1 && n <= 12; pay = 3 }
+    else { won = n !== 0 && n % 2 === 0; pay = 2 } // even
+    out.push(won ? pay : 0)
+  }
+  return stats(out)
+}
+
 const SYMS_OLD = [
   { s: 'cherry', w: 30, pay: 3 }, { s: 'bell', w: 22, pay: 5 }, { s: 'star', w: 16, pay: 8 },
   { s: 'clover', w: 12, pay: 12 }, { s: 'diamond', w: 8, pay: 20 }, { s: 'crown', w: 5, pay: 40 }, { s: 'seven', w: 3, pay: 100 },
@@ -155,3 +188,8 @@ console.log('Slots OLD    ', P(simSlots(SYMS_OLD, 0.5)))
 console.log('Slots NEW    ', P(simSlots(SYMS_NEW, 0.55)))
 console.log('Plinko       ', P(simPlinko(MULTS, 8)))
 console.log('Hi-Lo        ', P(simHilo()))
+console.log('Coin Flip    ', P(simCoin()))
+console.log('DragonTiger D', P(simDragon('dragon')))
+console.log('DragonTiger =', P(simDragon('tie')))
+console.log('Roulette red ', P(simRoulette('red')))
+console.log('Roulette 35:1', P(simRoulette('straight')))

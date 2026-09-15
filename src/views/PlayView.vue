@@ -8,14 +8,21 @@ const route = useRoute()
 const router = useRouter()
 const store = useUserStore()
 
+const SlotsGame = defineAsyncComponent(() => import('../components/games/SlotsGame.vue'))
 const COMPONENTS = {
   crash: defineAsyncComponent(() => import('../components/games/CrashGame.vue')),
   mines: defineAsyncComponent(() => import('../components/games/MinesGame.vue')),
   dice: defineAsyncComponent(() => import('../components/games/DiceGame.vue')),
   wheel: defineAsyncComponent(() => import('../components/games/WheelGame.vue')),
-  slots: defineAsyncComponent(() => import('../components/games/SlotsGame.vue')),
   plinko: defineAsyncComponent(() => import('../components/games/PlinkoGame.vue')),
   hilo: defineAsyncComponent(() => import('../components/games/HiloGame.vue')),
+  coinflip: defineAsyncComponent(() => import('../components/games/CoinFlipGame.vue')),
+  roulette: defineAsyncComponent(() => import('../components/games/RouletteGame.vue')),
+  blackjack: defineAsyncComponent(() => import('../components/games/BlackjackGame.vue')),
+  dragontiger: defineAsyncComponent(() => import('../components/games/DragonTigerGame.vue')),
+  slots: SlotsGame,
+  'slots-fruit': SlotsGame,
+  'slots-gem': SlotsGame,
 }
 
 const meta = computed(() => instantById(route.params.game))

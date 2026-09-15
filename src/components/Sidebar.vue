@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { INSTANT } from '../data/instant'
+import { CATEGORIES } from '../data/instant'
 
 defineProps({ open: { type: Boolean, default: false } })
 const emit = defineEmits(['close'])
@@ -23,17 +23,10 @@ const promo = [
       </router-link>
 
       <div class="hr"></div>
-      <router-link to="/instant" class="item">
-        <span class="ic">🎯</span>All Games
+      <router-link to="/games" class="item"><span class="ic">🎮</span>All Games</router-link>
+      <router-link v-for="c in CATEGORIES" :key="c.key" :to="`/games/${c.key}`" class="item">
+        <span class="ic">{{ c.icon }}</span>{{ c.label }}
       </router-link>
-      <button class="item expand" :class="{ on: showGames }" @click.stop="showGames = !showGames">
-        <span class="ic">🕹️</span>Games <span class="chev">{{ showGames ? '▾' : '▸' }}</span>
-      </button>
-      <div v-if="showGames" class="sub">
-        <router-link v-for="g in INSTANT" :key="g.id" :to="`/instant/${g.id}`" class="subitem">
-          <span class="ic">{{ g.emoji }}</span>{{ g.name }}
-        </router-link>
-      </div>
 
       <div class="hr"></div>
       <router-link to="/wallet" class="item"><span class="ic">💳</span>Wallet</router-link>

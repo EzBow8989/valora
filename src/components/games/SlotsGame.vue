@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import BetControls from './BetControls.vue'
 import { useBank } from '../../lib/bank'
 
@@ -7,23 +8,23 @@ const props = defineProps({ mode: { type: String, default: 'demo' } })
 const emit = defineEmits(['update:mode'])
 const mode = computed({ get: () => props.mode, set: (v) => emit('update:mode', v) })
 const bank = useBank(mode)
+const route = useRoute()
 
-// weighted symbol pool (generic emblems, not branded characters)
-// Pays tuned so overall EV ≈ 0.947 (3-of-a-kind + a 0.65x "any pair").
-const SYMS = [
-  { s: '🍒', w: 30, pay: 8 },
-  { s: '🔔', w: 22, pay: 12 },
-  { s: '⭐', w: 16, pay: 22 },
-  { s: '🍀', w: 12, pay: 38 },
-  { s: '💎', w: 8, pay: 80 },
-  { s: '👑', w: 5, pay: 160 },
-  { s: '7️⃣', w: 3, pay: 500 },
-]
+// Skins share the SAME weights/pays -> identical ~90% RTP; only art differs.
+const WEIGHTS = [30, 22, 16, 12, 8, 5, 3]
+const PAYS = [8, 12, 22, 38, 80, 160, 500]
+const SKINS = {
+  slots: ['🍒', '🔔', '⭐', '🍀', '💎', '👑', '7️⃣'],
+  'slots-fruit': ['🍒', '🍋', '🍊', '🍉', '🍇', '🔔', '7️⃣'],
+  'slots-gem': ['🔷', '🔶', '💠', '🟣', '💎', '👑', '⭐'],
+}
+const EMOJIS = SKINS[route.params.game] || SKINS.slots
+const SYMS = EMOJIS.map((s, i) => ({ s, w: WEIGHTS[i], pay: PAYS[i] }))
 const POOL = SYMS.flatMap((x) => Array(x.w).fill(x.s))
 const payOf = (s) => SYMS.find((x) => x.s === s).pay
 
 const stake = ref(5)
-const reels = ref(['🍒', '🔔', '⭐'])
+const reels = ref([EMOJIS[0], EMOJIS[1], EMOJIS[2]])
 const spinning = ref([false, false, false])
 const busy = ref(false)
 const outcome = ref(null)
