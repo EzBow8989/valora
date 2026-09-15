@@ -15,6 +15,7 @@ const rolling = ref(false)
 const result = ref(null) // last roll number
 const outcome = ref(null) // 'win' | 'lose' | null
 const lastWin = ref(0)
+const landed = ref(false)
 
 const chance = computed(() => (dir.value === 'over' ? 100 - target.value : target.value))
 // 10% house edge; slider is capped to 25–75 so no near-certain bet exists.
@@ -25,20 +26,23 @@ function roll() {
   if (!bank.bet(stake.value)) return
   rolling.value = true
   outcome.value = null
+  landed.value = false
+  // authoritative result first; the tumble is just its representation
   const r = Math.round(Math.random() * 10000) / 100
-  // brief animation
-  let ticks = 0
-  const iv = setInterval(() => {
-    result.value = Math.round(Math.random() * 10000) / 100
-    if (++ticks > 8) {
-      clearInterval(iv)
+  let delay = 40, elapsed = 0
+  const step = () => {
+    if (elapsed < 1350) {
+      result.value = Math.round(Math.random() * 10000) / 100
+      elapsed += delay
+      delay = Math.min(delay * 1.22, 240) // decelerate like a settling die
+      setTimeout(step, delay)
+    } else {
       result.value = r
+      landed.value = true
       const won = dir.value === 'over' ? r > target.value : r < target.value
       if (won) {
         const win = stake.value * payout.value
-        bank.win(win)
-        lastWin.value = win
-        outcome.value = 'win'
+        bank.win(win); lastWin.value = win; outcome.value = 'win'
         bank.log(stake.value, win, 'Turbo Dice')
       } else {
         outcome.value = 'lose'
@@ -46,17 +50,20 @@ function roll() {
       }
       rolling.value = false
     }
-  }, 45)
+  }
+  step()
 }
 </script>
 
 <template>
   <div class="game">
     <div class="left">
-      <div class="result card" :class="outcome">
-        <div class="num" :class="outcome">{{ result === null ? '—' : result.toFixed(2) }}</div>
-        <p v-if="outcome === 'win'" class="msg win">Win! +{{ bank.symbol.value }}{{ lastWin.toFixed(2) }}</p>
-        <p v-else-if="outcome === 'lose'" class="msg lose">You lost this roll</p>
+      <div class="result card" :class="[outcome, { rolling, landed }]">
+        <div class="die" :class="{ spin: rolling, win: outcome === 'win', lose: outcome === 'lose' }" aria-hidden="true">🎲</div>
+        <div class="num" :class="[outcome, { rolling, landed }]">{{ result === null ? '—' : result.toFixed(2) }}</div>
+        <p v-if="outcome === 'win'" class="msg win">🎯 {{ result.toFixed(2) }} {{ dir === 'over' ? '>' : '<' }} {{ target }} — Win! +{{ bank.symbol.value }}{{ lastWin.toFixed(2) }}</p>
+        <p v-else-if="outcome === 'lose'" class="msg lose">💥 {{ result.toFixed(2) }} {{ dir === 'over' ? '<' : '>' }} {{ target }} — missed</p>
+        <p v-else-if="rolling" class="msg">Rolling…</p>
         <p v-else class="msg">Roll {{ dir }} {{ target }}.00 to win</p>
       </div>
 
@@ -90,15 +97,26 @@ function roll() {
 
 <style scoped>
 .game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
-.result { padding: 26px; text-align: center; margin-bottom: 18px; }
-.num { font-size: clamp(44px, 9vw, 76px); font-weight: 900; letter-spacing: -.03em; }
+.result { padding: 22px 26px 26px; text-align: center; margin-bottom: 18px; transition: box-shadow .2s ease, background .2s ease; }
+.result.win { box-shadow: 0 0 0 1px #1c5b45, 0 0 40px -8px var(--green); }
+.result.lose { animation: shake .4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+.die { font-size: 40px; line-height: 1; display: inline-block; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+.die.spin { animation: tumble .5s linear infinite; }
+.die.win { animation: pop .4s ease; } .die.lose { filter: grayscale(1) drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+@keyframes tumble { from { transform: rotate(0) scale(1); } 50% { transform: rotate(180deg) scale(1.12); } to { transform: rotate(360deg) scale(1); } }
+@keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.4)} to{transform:scale(1)} }
+.num { font-size: clamp(40px, 8.5vw, 72px); font-weight: 900; letter-spacing: -.03em; transition: color .15s ease; }
+.num.rolling { color: var(--muted); opacity: .85; filter: blur(.4px); }
+.num.landed { animation: bounce .45s cubic-bezier(.2,1.4,.5,1); }
+@keyframes bounce { 0%{transform:scale(1.5);opacity:.4} to{transform:scale(1);opacity:1} }
 .num.win { color: var(--green); } .num.lose { color: var(--red); }
 .msg { color: var(--muted); margin: 6px 0 0; font-weight: 700; }
 .msg.win { color: var(--green); } .msg.lose { color: var(--red); }
 .slider { padding: 8px 4px 0; }
 .track { position: relative; height: 12px; border-radius: 999px; background: var(--red); overflow: visible; margin-bottom: 8px; }
 .fill { position: absolute; top: 0; bottom: 0; background: var(--green); border-radius: 999px; }
-.marker { position: absolute; top: -6px; width: 4px; height: 24px; background: #fff; border-radius: 3px; transform: translateX(-50%); box-shadow: 0 0 8px #fff; }
+.marker { position: absolute; top: -6px; width: 4px; height: 24px; background: #fff; border-radius: 3px; transform: translateX(-50%); box-shadow: 0 0 8px #fff; transition: left .12s linear; }
 input[type=range] { width: 100%; accent-color: var(--brand-2); }
 .ticks { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 2px; }
 .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 16px; }
