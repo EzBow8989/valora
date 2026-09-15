@@ -84,11 +84,11 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
       </div>
 
       <svg class="trail" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <path :d="`M6 92 Q ${6 + progress*82} 92 ${6 + progress*82} ${100 - (8 + progress*72)}`"
-              fill="none" :stroke="phase==='crashed' ? '#f87171' : '#22d3ee'" stroke-width="2" stroke-linecap="round" opacity="0.85" />
+        <line x1="8" y1="92" :x2="8 + progress * 80" :y2="100 - (8 + progress * 78)"
+              :stroke="phase === 'crashed' ? '#f87171' : '#ffb020'" stroke-width="2.4" stroke-linecap="round" />
       </svg>
-      <div class="nose" :style="{ left: 6 + progress * 82 + '%', bottom: 8 + progress * 72 + '%' }"></div>
-      <div class="rocket" :style="{ left: 6 + progress * 82 + '%', bottom: 8 + progress * 72 + '%' }">🚀</div>
+      <div class="nose" :class="{ dead: phase === 'crashed' }" :style="{ left: 8 + progress * 80 + '%', bottom: 8 + progress * 78 + '%' }"></div>
+      <div class="rocket" :class="{ fall: phase === 'crashed' }" :style="{ left: 8 + progress * 80 + '%', bottom: 8 + progress * 78 + '%' }">🚀</div>
 
       <div class="center">
         <div class="mult" :class="phase">{{ mult.toFixed(2) }}×</div>
@@ -120,11 +120,11 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 .hist .w { background: rgba(52,211,153,.18); color: var(--green); }
 .hist .l { background: rgba(248,113,113,.16); color: var(--red); }
 .trail { position: absolute; inset: 0; width: 100%; height: 100%; }
-.nose { position: absolute; width: 14px; height: 14px; border-radius: 999px; background: radial-gradient(circle, #22d3ee, rgba(34,211,238,0) 70%); transform: translate(-50%, 50%); transition: left .05s linear, bottom .05s linear; pointer-events: none; z-index: 1; }
-.board.crashed .nose { background: radial-gradient(circle, #f87171, rgba(248,113,113,0) 70%); }
-/* rocket exhaust (its lower-left) sits on the trail tip */
-.rocket { position: absolute; font-size: 28px; line-height: 1; transform: translate(-18%, 18%); transition: left .05s linear, bottom .05s linear; filter: drop-shadow(0 0 8px #22d3ee); z-index: 2; }
-.board.crashed .rocket { filter: grayscale(1) drop-shadow(0 0 8px #f87171); }
+.nose { position: absolute; width: 14px; height: 14px; border-radius: 999px; background: radial-gradient(circle, #ffb020, rgba(255,176,32,0) 70%); transform: translate(-50%, 50%); transition: left .05s linear, bottom .05s linear; pointer-events: none; z-index: 1; }
+.nose.dead { background: radial-gradient(circle, #f87171, rgba(248,113,113,0) 70%); }
+/* rocket rides the trail tip; on crash it tumbles and drops off the board */
+.rocket { position: absolute; font-size: 28px; line-height: 1; transform: translate(-18%, 18%) rotate(0deg); transition: left .05s linear, bottom .05s linear, transform .85s cubic-bezier(.5,0,.9,.4), opacity .85s ease-in; filter: drop-shadow(0 0 8px #ffb020); z-index: 2; }
+.rocket.fall { transform: translate(-18%, 340px) rotate(160deg); opacity: 0; filter: grayscale(1) drop-shadow(0 0 8px #f87171); }
 .center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; }
 .mult { font-size: clamp(38px, 8vw, 68px); font-weight: 900; letter-spacing: -.03em; text-shadow: 0 4px 30px rgba(34,211,238,.4); }
 .mult.crashed { color: var(--red); }

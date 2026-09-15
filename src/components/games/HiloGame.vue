@@ -10,53 +10,63 @@ const bank = useBank(mode)
 
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 const SUITS = ['♠', '♥', '♦', '♣']
+
 const stake = ref(5)
-const current = ref(dealCard())
-const next = ref(null)
-const busy = ref(false)
-const outcome = ref(null)
+const current = ref(dealCard()) // the card being bet on
+const revealed = ref(null)      // the drawn next card (result)
+const outcome = ref(null)       // { res, win }
+const busy = ref(false)         // during the brief reveal
+const done = ref(false)         // a result is shown; must deal before next bet
 
 function suited() {
   const s = SUITS[Math.floor(Math.random() * 4)]
   return { s, red: s === '♥' || s === '♦' }
 }
-// The BETTING card is always mid-range (5–9) so neither side is ever a
-// near-certain "free money" bet. Both sides always keep 4–8 outs.
+// Betting card is always mid-range (5–9): neither side is ever a near-lock.
 function dealCard() {
   return { v: 5 + Math.floor(Math.random() * 5), ...suited() }
 }
-// The REVEALED card is a full 1–13 draw (the actual outcome).
+// Revealed card is a full 1–13 draw.
 function draw() {
   return { v: Math.floor(Math.random() * 13) + 1, ...suited() }
 }
+
 const higherCount = computed(() => 13 - current.value.v)
 const lowerCount = computed(() => current.value.v - 1)
-// Ties lose (house edge). Fair side pays (13/count)*0.90 -> 10% house edge.
+// Ties lose. Fair side pays (13/count)*0.90 -> 10% house edge.
 const payHigher = computed(() => (higherCount.value ? Math.max(1.01, (13 / higherCount.value) * 0.90) : 0))
 const payLower = computed(() => (lowerCount.value ? Math.max(1.01, (13 / lowerCount.value) * 0.90) : 0))
 
 function guess(dir) {
-  if (busy.value || !bank.canBet(stake.value)) return
+  if (busy.value || done.value || !bank.canBet(stake.value)) return
   if (dir === 'hi' && !higherCount.value) return
   if (dir === 'lo' && !lowerCount.value) return
   if (!bank.bet(stake.value)) return
   busy.value = true
   outcome.value = null
+  revealed.value = null
   const n = draw()
   setTimeout(() => {
-    next.value = n
+    revealed.value = n
     let win = 0, res
-    if (n.v === current.value.v) { win = 0; res = 'tie' } // tie loses (house edge)
+    if (n.v === current.value.v) { win = 0; res = 'tie' }
     else if (dir === 'hi' && n.v > current.value.v) { win = stake.value * payHigher.value; res = 'win' }
     else if (dir === 'lo' && n.v < current.value.v) { win = stake.value * payLower.value; res = 'win' }
     else res = 'lose'
     if (win > 0) bank.win(win)
     bank.log(stake.value, win, 'Hi-Lo')
-    outcome.value = { res, win, card: n }
-    // Next betting card is always a fresh mid-range card (no near-sure bets).
-    current.value = dealCard()
+    outcome.value = { res, win }
     busy.value = false
+    done.value = true
   }, 450)
+}
+
+// Only now is a fresh card dealt — never mid-result.
+function playAgain() {
+  current.value = dealCard()
+  revealed.value = null
+  outcome.value = null
+  done.value = false
 }
 </script>
 
@@ -74,28 +84,30 @@ function guess(dir) {
           </div>
           <span class="vs">→</span>
           <div class="cardslot">
-            <div v-if="outcome" class="cardface" :class="{ red: outcome.card.red }">
-              <span class="rank">{{ RANKS[outcome.card.v - 1] }}</span>
-              <span class="suit">{{ outcome.card.s }}</span>
+            <div v-if="revealed" class="cardface" :class="{ red: revealed.red }">
+              <span class="rank">{{ RANKS[revealed.v - 1] }}</span>
+              <span class="suit">{{ revealed.s }}</span>
             </div>
             <div v-else class="cardface back">?</div>
             <span class="clabel">Next card</span>
           </div>
         </div>
+
         <div class="out" :class="outcome && outcome.res">
           <template v-if="outcome">
             <b v-if="outcome.res === 'win'" class="win">Correct! +{{ bank.symbol.value }}{{ outcome.win.toFixed(2) }} 🎉</b>
-            <b v-else-if="outcome.res === 'tie'" class="push">Tie ({{ RANKS[outcome.card.v - 1] }}) — house wins</b>
-            <b v-else class="lose">Wrong guess</b>
+            <b v-else-if="outcome.res === 'tie'" class="push">Tie ({{ RANKS[revealed.v - 1] }}) — house wins</b>
+            <b v-else class="lose">Wrong guess — you lost</b>
           </template>
+          <span v-else-if="busy">Revealing…</span>
           <span v-else>Will the next card be higher or lower?</span>
         </div>
         <p class="odds">A low → K high · <b>{{ higherCount }}</b> higher · <b>{{ lowerCount }}</b> lower · ties lose · 10% house edge</p>
       </div>
     </div>
 
-    <BetControls v-model:stake="stake" v-model:mode="mode" :balance="bank.balance.value" :symbol="bank.symbol.value" :mode="mode" :disabled="busy">
-      <div class="guesses">
+    <BetControls v-model:stake="stake" v-model:mode="mode" :balance="bank.balance.value" :symbol="bank.symbol.value" :mode="mode" :disabled="busy || done">
+      <div v-if="!done" class="guesses">
         <button class="g hi" :disabled="busy || !higherCount || !bank.canBet(stake)" @click="guess('hi')">
           <span>▲ Higher</span><b>{{ payHigher ? payHigher.toFixed(2) + '×' : '—' }}</b>
         </button>
@@ -103,6 +115,7 @@ function guess(dir) {
           <span>▼ Lower</span><b>{{ payLower ? payLower.toFixed(2) + '×' : '—' }}</b>
         </button>
       </div>
+      <button v-else class="btn btn-cta again" @click="playAgain">Deal next card ▸</button>
     </BetControls>
   </div>
 </template>
@@ -128,5 +141,6 @@ function guess(dir) {
 .g.hi { background: linear-gradient(135deg,#34d399,#0e7490); }
 .g.lo { background: linear-gradient(135deg,#fb7185,#be123c); }
 .g:disabled { opacity: .45; }
+.again { width: 100%; padding: 14px; font-size: 16px; }
 @media (max-width: 780px) { .game { grid-template-columns: 1fr; } }
 </style>
