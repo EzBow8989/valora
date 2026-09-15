@@ -69,6 +69,7 @@ function guess(dir) {
           </template>
           <span v-else>Will the next card be higher or lower?</span>
         </div>
+        <p class="odds">A low → K high · <b>{{ higherCount }}</b> higher · <b>{{ lowerCount }}</b> lower · ties lose</p>
       </div>
     </div>
 
@@ -95,6 +96,8 @@ function guess(dir) {
 .suit { font-size: 40px; }
 .out { margin-top: 22px; color: #bfeede; font-weight: 700; min-height: 24px; }
 .out .win { color: #6ee7b7; font-size: 18px; } .out .lose { color: #fca5a5; } .out .push { color: #fde68a; }
+.odds { margin: 10px 0 0; color: #9fd6c2; font-size: 12px; }
+.odds b { color: #fff; }
 .guesses { display: grid; gap: 8px; }
 .g { display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 10px; padding: 13px 16px; font-weight: 800; color: #fff; }
 .g.hi { background: linear-gradient(135deg,#34d399,#0e7490); }

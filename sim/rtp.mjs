@@ -115,8 +115,8 @@ function simHilo() {
     const c = (rnd() * 13 | 0) + 1
     const hi = 13 - c, lo = c - 1
     let dir, payWin
-    if (hi >= lo && hi > 0) { dir = 'hi'; payWin = Math.max(1.01, (13 / hi) * 0.98) }
-    else if (lo > 0) { dir = 'lo'; payWin = Math.max(1.01, (13 / lo) * 0.98) }
+    if (hi >= lo && hi > 0) { dir = 'hi'; payWin = Math.max(1.01, (13 / hi) * 0.96) }
+    else if (lo > 0) { dir = 'lo'; payWin = Math.max(1.01, (13 / lo) * 0.96) }
     else { dir = 'hi'; payWin = 0 }
     const n = (rnd() * 13 | 0) + 1
     if (n === c) out.push(0) // tie loses
