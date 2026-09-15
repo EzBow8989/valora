@@ -1,0 +1,12 @@
+{
+  "name": "Valora — Casino & Sports",
+  "short_name": "Valora",
+  "description": "Slots, live casino and sports. Demo iGaming platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0b2b",
+  "theme_color": "#0e0b2b",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
