@@ -81,11 +81,11 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
         <span v-for="(h, i) in history" :key="i" :class="h.win ? 'w' : 'l'">{{ h.m.toFixed(2) }}×</span>
       </div>
 
-      <div class="rocket" :style="{ left: 6 + progress * 82 + '%', bottom: 8 + progress * 74 + '%' }">🚀</div>
       <svg class="trail" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <path :d="`M6 92 Q ${6 + progress*40} ${92 - progress*70}, ${6 + progress*82} ${18 + (1-progress)*0}`"
-              fill="none" :stroke="phase==='crashed' ? '#f87171' : '#22d3ee'" stroke-width="1.2" opacity="0.6" />
+        <path :d="`M6 92 Q ${6 + progress*82} 92 ${6 + progress*82} ${100 - (8 + progress*72)}`"
+              fill="none" :stroke="phase==='crashed' ? '#f87171' : '#22d3ee'" stroke-width="2" stroke-linecap="round" opacity="0.85" />
       </svg>
+      <div class="rocket" :style="{ left: 6 + progress * 82 + '%', bottom: 8 + progress * 72 + '%' }">🚀</div>
 
       <div class="center">
         <div class="mult" :class="phase">{{ mult.toFixed(2) }}×</div>
@@ -117,7 +117,7 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 .hist .w { background: rgba(52,211,153,.18); color: var(--green); }
 .hist .l { background: rgba(248,113,113,.16); color: var(--red); }
 .trail { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rocket { position: absolute; font-size: 30px; transition: left .05s linear, bottom .05s linear; filter: drop-shadow(0 0 10px #22d3ee); }
+.rocket { position: absolute; font-size: 30px; transform: translate(-50%, 50%); transition: left .05s linear, bottom .05s linear; filter: drop-shadow(0 0 10px #22d3ee); }
 .board.crashed .rocket { filter: grayscale(1) drop-shadow(0 0 8px #f87171); }
 .center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; }
 .mult { font-size: clamp(38px, 8vw, 68px); font-weight: 900; letter-spacing: -.03em; text-shadow: 0 4px 30px rgba(34,211,238,.4); }

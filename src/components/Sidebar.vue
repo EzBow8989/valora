@@ -4,24 +4,12 @@ import { INSTANT } from '../data/instant'
 
 defineProps({ open: { type: Boolean, default: false } })
 const emit = defineEmits(['close'])
-const showInstant = ref(true)
+const showGames = ref(true)
 
 const promo = [
   { to: '/promotions', label: 'Bonus Collection', icon: '🎁' },
   { to: '/promotions', label: 'Challenge', icon: '🏆' },
-  { to: '/jackpots', label: 'Big Jackpot', icon: '💰' },
-  { to: '/vip', label: 'VIP Shop', icon: '🛍️' },
-]
-const browse = [
-  { to: '/slots', label: 'All Games', icon: '🎯' },
-  { to: '/slots', label: 'New Games', icon: '✨', query: { sort: 'new' } },
-]
-const casino = [
-  { to: '/slots', label: 'Slots', icon: '🎰' },
-  { to: '/instant/wheel', label: 'Wheel', icon: '🎡' },
-  { to: '/live-casino', label: 'Live Casino', icon: '🎥' },
-  { to: '/table-games', label: 'Table Games', icon: '🃏' },
-  { to: '/sports', label: 'Sports', icon: '⚽' },
+  { to: '/vip', label: 'VIP Club', icon: '👑' },
 ]
 </script>
 
@@ -35,23 +23,21 @@ const casino = [
       </router-link>
 
       <div class="hr"></div>
-      <router-link v-for="l in browse" :key="l.label" :to="l.query ? { path: l.to, query: l.query } : l.to" class="item">
-        <span class="ic">{{ l.icon }}</span>{{ l.label }}
+      <router-link to="/instant" class="item">
+        <span class="ic">🎯</span>All Games
       </router-link>
-
-      <button class="item expand" :class="{ on: showInstant }" @click.stop="showInstant = !showInstant">
-        <span class="ic">🕹️</span>Instant Games <span class="chev">{{ showInstant ? '▾' : '▸' }}</span>
+      <button class="item expand" :class="{ on: showGames }" @click.stop="showGames = !showGames">
+        <span class="ic">🕹️</span>Games <span class="chev">{{ showGames ? '▾' : '▸' }}</span>
       </button>
-      <div v-if="showInstant" class="sub">
+      <div v-if="showGames" class="sub">
         <router-link v-for="g in INSTANT" :key="g.id" :to="`/instant/${g.id}`" class="subitem">
           <span class="ic">{{ g.emoji }}</span>{{ g.name }}
         </router-link>
       </div>
 
       <div class="hr"></div>
-      <router-link v-for="l in casino" :key="l.label" :to="l.to" class="item">
-        <span class="ic">{{ l.icon }}</span>{{ l.label }}
-      </router-link>
+      <router-link to="/wallet" class="item"><span class="ic">💳</span>Wallet</router-link>
+      <router-link to="/account" class="item"><span class="ic">⚙️</span>Account</router-link>
     </nav>
 
     <div class="foot">

@@ -35,12 +35,12 @@ onBeforeUnmount(() => clearInterval(iv))
       <div class="pcard jp">
         <span class="cap">Total Jackpot</span>
         <b class="big gold">{{ store.symbol }}{{ jackpotStr }}</b>
-        <router-link to="/jackpots" class="btn btn-cta play">Play</router-link>
+        <router-link to="/instant" class="btn btn-cta play">Play</router-link>
       </div>
       <div class="pcard month">
         <span class="cap">Win of the Month</span>
         <b class="big">{{ store.symbol }}193,800.00</b>
-        <span class="sub">in Titan Treasure</span>
+        <span class="sub">in Plinko Drop</span>
       </div>
     </div>
     <div class="feed">

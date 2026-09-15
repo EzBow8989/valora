@@ -10,7 +10,7 @@ const router = useRouter()
 const q = ref('')
 
 function submit() {
-  router.push({ name: 'slots', query: q.value.trim() ? { q: q.value.trim() } : {} })
+  router.push('/instant')
 }
 </script>
 
