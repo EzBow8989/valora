@@ -28,9 +28,22 @@ const reels = ref([EMOJIS[0], EMOJIS[1], EMOJIS[2]])
 const spinning = ref([false, false, false])
 const busy = ref(false)
 const outcome = ref(null)
+const autoLeft = ref(0) // remaining auto spins; Infinity = endless; 0 = off
 const timers = []
+let autoTimer = 0
 
 function rnd() { return POOL[Math.floor(Math.random() * POOL.length)] }
+
+const AUTO_OPTS = [10, 25, 50, Infinity]
+function startAuto(n) {
+  if (busy.value) return
+  autoLeft.value = n
+  spin()
+}
+function stopAuto() {
+  autoLeft.value = 0
+  clearTimeout(autoTimer)
+}
 
 function spin() {
   if (busy.value || !bank.canBet(stake.value)) return
@@ -66,9 +79,18 @@ function settle(final) {
   bank.log(stake.value, win, 'Rune Reels (Slots)')
   outcome.value = { win, label: win > 0 ? label : 'No match' }
   busy.value = false
+  // chain the next auto-spin (stops if count runs out or balance too low)
+  if (autoLeft.value > 0) {
+    autoLeft.value -= 1
+    if (autoLeft.value > 0 && bank.canBet(stake.value)) {
+      autoTimer = setTimeout(spin, 650)
+    } else {
+      autoLeft.value = 0
+    }
+  }
 }
 
-onBeforeUnmount(() => timers.forEach(clearTimeout))
+onBeforeUnmount(() => { timers.forEach(clearTimeout); clearTimeout(autoTimer) })
 </script>
 
 <template>
@@ -96,10 +118,21 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
       </div>
     </div>
 
-    <BetControls v-model:stake="stake" v-model:mode="mode" :balance="bank.balance.value" :symbol="bank.symbol.value" :mode="mode" :disabled="busy">
-      <button class="btn btn-cta act" :disabled="busy || !bank.canBet(stake)" @click="spin">
+    <BetControls v-model:stake="stake" v-model:mode="mode" :balance="bank.balance.value" :symbol="bank.symbol.value" :mode="mode" :disabled="busy || autoLeft > 0">
+      <button v-if="autoLeft <= 0" class="btn btn-cta act" :disabled="busy || !bank.canBet(stake)" @click="spin">
         {{ busy ? 'Spinning…' : `Spin · ${bank.symbol.value}${stake.toFixed(2)}` }}
       </button>
+      <button v-else class="btn act stop" @click="stopAuto">
+        ⏹ Stop auto{{ autoLeft === Infinity ? '' : ` (${autoLeft} left)` }}
+      </button>
+      <div class="autorow">
+        <span class="alabel">Auto spin</span>
+        <div class="auto">
+          <button v-for="n in AUTO_OPTS" :key="n" :disabled="busy || autoLeft > 0 || !bank.canBet(stake)" @click="startAuto(n)">
+            {{ n === Infinity ? '∞' : n }}
+          </button>
+        </div>
+      </div>
     </BetControls>
   </div>
 </template>
@@ -116,5 +149,12 @@ onBeforeUnmount(() => timers.forEach(clearTimeout))
 .out .win { color: var(--green); font-size: 17px; } .out .lose { color: var(--red); }
 .paytable { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; color: var(--muted); font-size: 12.5px; }
 .act { width: 100%; padding: 14px; font-size: 16px; }
+.stop { background: linear-gradient(135deg,#fb7185,#be123c); color: #fff; }
+.autorow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.alabel { font-size: 12.5px; color: var(--muted); font-weight: 700; }
+.auto { display: flex; gap: 6px; }
+.auto button { min-width: 40px; border: 1px solid var(--line); background: var(--panel-3); color: var(--text); border-radius: 8px; padding: 8px 0; font-weight: 800; font-size: 13px; }
+.auto button:hover:not(:disabled) { background: var(--brand); }
+.auto button:disabled { opacity: .45; }
 @media (max-width: 780px) { .game { grid-template-columns: 1fr; } }
 </style>
