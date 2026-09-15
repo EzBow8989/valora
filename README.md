@@ -41,6 +41,7 @@ npm run preview
 ```
 
 Zero-config deploy on Vercel (Vite preset). SPA routing via `vercel.json` rewrites.
+Connected to Vercel Git — every push to `master` triggers a production deploy.
 
 ## Structure
 
