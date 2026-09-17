@@ -36,8 +36,11 @@ function reset() {
 }
 
 function step() {
-  let bet = Math.max(cfg.base, Math.round(s.bet * 100) / 100)
-  if (bet >= cfg.maxBet) { bet = cfg.maxBet; st.capHits++ }
+  let bet = Math.round(s.bet * 100) / 100
+  // If the next progression bet would exceed the table max, reset to base —
+  // you can't keep doubling past the cap, so the sequence starts over.
+  if (bet > cfg.maxBet) { bet = cfg.base; s.bet = cfg.base; s.fi = 0; st.capHits++ }
+  bet = Math.max(cfg.base, bet)
   if (bet > st.balance) { st.bust = true; return false }
   st.balance -= bet; st.wagered += bet
   const mult = gmeta.value.sample()
@@ -50,7 +53,7 @@ function step() {
   log.value.unshift({ r: st.round, bet, mult, ret, won: s.won, bal: st.balance })
   if (log.value.length > 14) log.value.pop()
   s.bet = nextBet(cfg, { ...s, bet })
-  st.bet = Math.min(cfg.maxBet, Math.max(cfg.base, s.bet))
+  st.bet = s.bet > cfg.maxBet ? cfg.base : Math.max(cfg.base, s.bet)
   return true
 }
 

@@ -138,7 +138,7 @@ onBeforeUnmount(() => { timers.forEach(clearTimeout); clearTimeout(autoTimer) })
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .machine { position: relative; background: radial-gradient(120% 120% at 50% 0%, #241d66, #12103a); border: 1px solid var(--line); border-radius: 18px; padding: 26px; }
 .reels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .reel { aspect-ratio: 1; background: linear-gradient(180deg,#0e0b2b,#1a1550); border: 2px solid var(--panel-3); border-radius: 14px; display: grid; place-items: center; font-size: clamp(46px, 10vw, 84px); overflow: hidden; }

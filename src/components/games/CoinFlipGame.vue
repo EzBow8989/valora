@@ -72,7 +72,7 @@ function flip() {
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .stage { display: grid; place-items: center; padding: 40px 0; perspective: 900px; }
 .coin { position: relative; width: 150px; height: 150px; transform-style: preserve-3d; }
 .side { position: absolute; inset: 0; border-radius: 999px; display: grid; place-items: center; font-size: 64px; font-weight: 900; color: #3a2a00; backface-visibility: hidden; box-shadow: inset 0 0 0 6px rgba(0,0,0,.15), 0 14px 30px rgba(0,0,0,.4); }

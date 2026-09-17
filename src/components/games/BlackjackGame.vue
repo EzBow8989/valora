@@ -135,7 +135,7 @@ function settle() {
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .table { background: radial-gradient(120% 120% at 50% 0%, #0f3d2a, #08221700); background-color: #0a2a1c; border: 1px solid var(--line); border-radius: 18px; padding: 26px 30px; }
 .row { margin-bottom: 18px; }
 .rlabel { color: #bfeede; font-size: 13px; font-weight: 700; margin-bottom: 8px; }

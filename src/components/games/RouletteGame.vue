@@ -104,7 +104,7 @@ onBeforeUnmount(() => clearInterval(iv))
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .table { background: radial-gradient(120% 120% at 50% 0%, #0d3b26, #06201400); border: 1px solid var(--line); border-radius: 18px; padding: 34px; text-align: center; background-color: #08281a; }
 .ball { width: 130px; height: 130px; border-radius: 999px; margin: 0 auto; display: grid; place-items: center; font-weight: 900; font-size: 46px; color: #fff; border: 4px solid rgba(255,255,255,.15); box-shadow: 0 14px 40px rgba(0,0,0,.5); }
 .ball.red { background: radial-gradient(circle at 35% 30%, #ff6b6b, #c81e2e); }

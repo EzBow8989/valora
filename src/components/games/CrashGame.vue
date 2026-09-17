@@ -111,7 +111,7 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .board { position: relative; aspect-ratio: 16/10; border-radius: 16px; overflow: hidden; border: 1px solid var(--line);
   background: radial-gradient(120% 120% at 20% 90%, #16224a, #0a0820); }
 .board.crashed { background: radial-gradient(120% 120% at 20% 90%, #3a1620, #0a0820); }

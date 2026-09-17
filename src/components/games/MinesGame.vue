@@ -98,7 +98,7 @@ function cashout() {
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .statusbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; color: var(--muted); font-size: 13.5px; }
 .statusbar b { color: var(--cyan); font-size: 18px; }
 .statusbar .win { color: var(--green); } .statusbar .lose { color: var(--red); }

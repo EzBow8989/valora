@@ -96,7 +96,7 @@ function roll() {
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .result { padding: 22px 26px 26px; text-align: center; margin-bottom: 18px; transition: box-shadow .2s ease, background .2s ease; }
 .result.win { box-shadow: 0 0 0 1px #1c5b45, 0 0 40px -8px var(--green); }
 .result.lose { animation: shake .4s ease; }

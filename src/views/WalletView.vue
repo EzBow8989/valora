@@ -102,7 +102,8 @@ function statusClass(s) { return ({ completed: 'ok', settled: 'ok', pending: 'pe
         <button v-for="f in ['all','deposit','withdrawal','bet']" :key="f" :class="{ on: filter === f }" @click="filter = f">{{ f }}</button>
       </div>
       <div v-if="!txns.length" class="empty">No transactions yet.</div>
-      <table v-else>
+      <div v-else class="tscroll">
+      <table>
         <thead><tr><th>Reference</th><th>Type</th><th>Method</th><th class="r">Amount</th><th>Status</th><th>Date</th></tr></thead>
         <tbody>
           <tr v-for="t in txns" :key="t.id">
@@ -115,6 +116,7 @@ function statusClass(s) { return ({ completed: 'ok', settled: 'ok', pending: 'pe
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <transition name="fade">
@@ -134,6 +136,8 @@ h1 { font-size: 26px; margin: 0 0 16px; }
 .bal span { color: var(--muted); font-size: 12.5px; }
 .bal b { font-size: 20px; }
 .bal.total { background: linear-gradient(135deg, var(--panel-3), var(--panel-2)); }
+.tscroll { overflow-x: auto; }
+.tscroll table { min-width: 460px; }
 .tabs { display: flex; gap: 6px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
 .tabs button { flex: 1; padding: 10px; border: 0; border-radius: 9px; background: none; color: var(--muted); font-weight: 800; }
 .tabs button.on { background: linear-gradient(135deg,var(--brand-2),var(--brand)); color: #fff; }

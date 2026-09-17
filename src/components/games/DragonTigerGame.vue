@@ -97,7 +97,7 @@ function deal() {
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
 .table { background: radial-gradient(120% 120% at 50% 0%, #2a1508, #140a04); border: 1px solid var(--line); border-radius: 18px; padding: 30px; text-align: center; }
 .seats { display: flex; align-items: center; justify-content: center; gap: 20px; }
 .seat { display: flex; flex-direction: column; align-items: center; gap: 10px; }

@@ -117,8 +117,8 @@ function spin() {
 </template>
 
 <style scoped>
-.game { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
-.wheelwrap { position: relative; width: min(380px, 82vw); aspect-ratio: 1; margin: 6px auto 0; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.wheelwrap { position: relative; width: min(360px, 100%); aspect-ratio: 1; margin: 6px auto 0; }
 .pointer { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); z-index: 4; color: #fff; font-size: 26px; filter: drop-shadow(0 2px 4px #000); }
 .wheel { position: absolute; inset: 0; border-radius: 999px; border: 6px solid #1e1953; box-shadow: 0 0 0 4px #2a2270, inset 0 0 40px rgba(0,0,0,.45); }
 .hub { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 3; width: 88px; height: 88px; border-radius: 999px; background: radial-gradient(circle,var(--panel-3),var(--panel)); border: 3px solid var(--line); display: grid; place-items: center; font-weight: 900; font-size: 14px; letter-spacing: .05em; color: var(--brand-2); text-align: center; }
