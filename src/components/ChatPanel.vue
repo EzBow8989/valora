@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useUserStore } from '../store/user'
 
+const emit = defineEmits(['close'])
 const store = useUserStore()
 const online = ref(26)
 const draft = ref('')
@@ -47,6 +48,7 @@ onBeforeUnmount(() => clearInterval(iv))
       <span class="dot"></span>
       <b>Live Chat</b>
       <span class="online">{{ online }} online</span>
+      <button class="x" aria-label="Close chat" @click="emit('close')">✕</button>
     </div>
     <div ref="body" class="body">
       <div v-for="(m, i) in msgs" :key="i" class="msg" :class="{ me: m.me }">
@@ -66,6 +68,8 @@ onBeforeUnmount(() => clearInterval(iv))
 .head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--green); box-shadow: 0 0 8px var(--green); }
 .head b { font-size: 14px; } .online { margin-left: auto; color: var(--muted); font-size: 12px; }
+.x { border: 0; background: var(--panel-3); color: var(--muted); width: 24px; height: 24px; border-radius: 7px; font-size: 12px; line-height: 1; }
+.x:hover { background: var(--line); color: var(--text); }
 .body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; }
 .msg { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
 .msg.me { align-items: flex-end; }
