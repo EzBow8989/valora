@@ -2,6 +2,7 @@
 // A "win" round = the round returned at least the stake (net non-loss).
 
 export const STRATEGIES = [
+  ['smart', 'Smart Recovery (covers all losses + target at real payout)'],
   ['martingale', 'Martingale (×2 on loss, reset on win)'],
   ['custom', 'Custom (×N on loss, reset on win)'],
   ['paroli', 'Reverse / Paroli (×2 on win, reset on loss)'],
@@ -16,6 +17,15 @@ const FIB = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987]
 export function nextBet(cfg, s) {
   const { kind, base, factor } = cfg
   if (kind === 'flat') return base
+  // Smart Recovery: on a win reset to base; on a loss bet exactly enough that a
+  // win recovers ALL accumulated losses plus the target profit, at the game's
+  // real payout P. Win profit = bet*(P-1), so bet = (losses + target)/(P-1).
+  if (kind === 'smart') {
+    if (s.won) return base
+    const P = cfg.payout > 1.01 ? cfg.payout : 2
+    const T = cfg.target != null ? cfg.target : base
+    return Math.max(base, ((s.loss || 0) + T) / (P - 1))
+  }
   if (kind === 'martingale' || kind === 'custom') return s.won ? base : s.bet * (factor || 2)
   if (kind === 'paroli') return s.won ? s.bet * (factor || 2) : base
   if (kind === 'dalembert') return s.won ? Math.max(base, s.bet - base) : s.bet + base
@@ -37,7 +47,8 @@ export function parseStrategy(text) {
 
   let kind = 'martingale'
   let factor = 2
-  if (/flat|same (?:bet|amount)|no change/.test(t)) kind = 'flat'
+  if (/smart|recover|cover (?:my )?loss|calculate|banker|commission/.test(t)) kind = 'smart'
+  else if (/flat|same (?:bet|amount)|no change/.test(t)) kind = 'flat'
   else if (/fibonacci|fib\b/.test(t)) kind = 'fibonacci'
   else if (/paroli|reverse|on win.*(?:double|x ?2|two|twice)/.test(t)) kind = 'paroli'
   else if (/d'?alembert/.test(t)) kind = 'dalembert'
@@ -48,6 +59,9 @@ export function parseStrategy(text) {
   const maxBet = num(/max(?:imum)?(?: bet)?\s*\$?€?rm?\s*([\d.]+)/, 250)
   const rounds = num(/([\d.]+)\s*(?:rounds|spins|bets|plays|times|games)/, 200)
   const startBalance = num(/(?:balance|bankroll|budget)\s*(?:of\s*)?\$?€?rm?\s*([\d.]+)/, 1000)
+  const target = num(/(?:win|profit|target|gain)\s*(?:of\s*)?\$?€?rm?\s*([\d.]+)/, null)
+  const payout = num(/(?:payout|pays?|odds|multiplier)\s*(?:of\s*)?\$?€?rm?\s*([\d.]+)\s*x?/, null)
 
-  return { kind, base: base || 5, factor, maxBet, rounds: Math.round(rounds), startBalance }
+  return { kind, base: base || 5, factor, maxBet, rounds: Math.round(rounds), startBalance,
+    ...(target != null ? { target } : {}), ...(payout != null ? { payout } : {}) }
 }

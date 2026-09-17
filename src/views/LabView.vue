@@ -1,15 +1,18 @@
 <script setup>
-import { ref, reactive, computed, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, watch, onBeforeUnmount, nextTick } from 'vue'
 import { GAME_SIMS, GAME_LIST } from '../lib/gamesim'
 import { STRATEGIES, nextBet, parseStrategy } from '../lib/strategy'
 
 const game = ref('coinflip')
-const nl = ref('bet 5, double on loss, reset to 5 on win, max 250, 200 rounds')
-const cfg = reactive({ kind: 'martingale', base: 5, factor: 2, maxBet: 250, rounds: 200, startBalance: 1000 })
+const nl = ref('smart recovery, bet 5, win 5 profit, max 250, 200 rounds')
+const cfg = reactive({ kind: 'smart', base: 5, factor: 2, payout: 1.9, target: 5, maxBet: 250, rounds: 200, startBalance: 1000 })
+
+// keep the payout in sync with the selected game (editable after)
+watch(game, (g) => { if (!running.value) cfg.payout = GAME_SIMS[g].winMult })
 const speed = ref(20) // rounds per tick
 
 const running = ref(false)
-const st = reactive({ round: 0, balance: 1000, bet: 5, wins: 0, losses: 0, lossStreak: 0, maxLossStreak: 0, capHits: 0, bust: false, wagered: 0, paid: 0, peak: 1000, trough: 1000 })
+const st = reactive({ round: 0, balance: 1000, bet: 5, wins: 0, losses: 0, lossStreak: 0, maxLossStreak: 0, capHits: 0, bust: false, wagered: 0, paid: 0, peak: 1000, trough: 1000, loss: 0 })
 const rounds = ref([])            // full chronological record of every bet
 const selectedRound = ref(null)   // round highlighted from a chart click
 let history = []
@@ -30,8 +33,8 @@ function applyNl() {
 function reset() {
   clearInterval(timer)
   running.value = false
-  Object.assign(st, { round: 0, balance: cfg.startBalance, bet: cfg.base, wins: 0, losses: 0, lossStreak: 0, maxLossStreak: 0, capHits: 0, bust: false, wagered: 0, paid: 0, peak: cfg.startBalance, trough: cfg.startBalance })
-  s = { bet: cfg.base, won: false, fi: 0 }
+  Object.assign(st, { round: 0, balance: cfg.startBalance, bet: cfg.base, wins: 0, losses: 0, lossStreak: 0, maxLossStreak: 0, capHits: 0, bust: false, wagered: 0, paid: 0, peak: cfg.startBalance, trough: cfg.startBalance, loss: 0 })
+  s = { bet: cfg.base, won: false, fi: 0, loss: 0 }
   history = [cfg.startBalance]
   rounds.value = []
   selectedRound.value = null
@@ -42,13 +45,15 @@ function step() {
   let bet = Math.round(s.bet * 100) / 100
   // If the next progression bet would exceed the table max, reset to base —
   // you can't keep doubling past the cap, so the sequence starts over.
-  if (bet > cfg.maxBet) { bet = cfg.base; s.bet = cfg.base; s.fi = 0; st.capHits++ }
+  if (bet > cfg.maxBet) { bet = cfg.base; s.bet = cfg.base; s.fi = 0; s.loss = 0; st.capHits++ }
   bet = Math.max(cfg.base, bet)
   if (bet > st.balance) { st.bust = true; return false }
   st.balance -= bet; st.wagered += bet
   const mult = gmeta.value.sample()
   const ret = bet * mult; st.balance += ret; st.paid += ret
   s.won = ret >= bet
+  s.loss = s.won ? 0 : (s.loss || 0) + bet // accumulated losses since last win (for Smart Recovery)
+  st.loss = s.loss
   if (s.won) { st.wins++; st.lossStreak = 0 } else { st.losses++; st.lossStreak++; st.maxLossStreak = Math.max(st.maxLossStreak, st.lossStreak) }
   st.round++
   st.peak = Math.max(st.peak, st.balance); st.trough = Math.min(st.trough, st.balance)
@@ -86,6 +91,52 @@ function onChartClick(e) {
     const el = logbody.value?.querySelector('.logrow.sel')
     if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
   })
+}
+
+// ---- Compare all strategies on this game (headless anti-Martingale audit) ----
+const comparing = ref(false)
+const compareResults = ref([])
+function headlessSession(sampler, kind, roundsN) {
+  let bal = cfg.startBalance, wag = 0, paid = 0, streak = 0, maxStreak = 0, bust = false
+  const c = { ...cfg, kind }
+  const ls = { bet: cfg.base, won: false, fi: 0, loss: 0 }
+  for (let i = 0; i < roundsN; i++) {
+    let bet = Math.round(ls.bet * 100) / 100
+    if (bet > cfg.maxBet) { bet = cfg.base; ls.bet = cfg.base; ls.fi = 0; ls.loss = 0 }
+    bet = Math.max(cfg.base, bet)
+    if (bet > bal) { bust = true; break }
+    bal -= bet; wag += bet
+    const ret = bet * sampler()
+    bal += ret; paid += ret
+    ls.won = ret >= bet
+    ls.loss = ls.won ? 0 : ls.loss + bet
+    if (ls.won) streak = 0; else { streak++; if (streak > maxStreak) maxStreak = streak }
+    ls.bet = nextBet(c, { ...ls, bet })
+  }
+  return { profit: bal - cfg.startBalance, wag, paid, maxStreak, bust }
+}
+async function compareAll() {
+  comparing.value = true
+  compareResults.value = []
+  await new Promise((r) => setTimeout(r, 30)) // let the "running" state paint
+  const sampler = gmeta.value.sample
+  const roundsN = Math.min(cfg.rounds, 400)
+  const SESS = 2000
+  const rows = []
+  for (const [kind, name] of STRATEGIES) {
+    let pos = 0, sumP = 0, wag = 0, paid = 0, busts = 0, worst = Infinity, maxStreak = 0
+    for (let i = 0; i < SESS; i++) {
+      const r = headlessSession(sampler, kind, roundsN)
+      if (r.profit > 0) pos++
+      sumP += r.profit; wag += r.wag; paid += r.paid
+      if (r.bust) busts++
+      if (r.profit < worst) worst = r.profit
+      if (r.maxStreak > maxStreak) maxStreak = r.maxStreak
+    }
+    rows.push({ name, endsPos: (pos / SESS) * 100, avgPL: sumP / SESS, rtp: (paid / wag) * 100, bust: (busts / SESS) * 100, worst, maxStreak })
+  }
+  compareResults.value = rows
+  comparing.value = false
 }
 
 function draw() {
@@ -150,7 +201,12 @@ onBeforeUnmount(() => clearInterval(timer))
         </div>
         <div class="row2">
           <label class="fld sm">Base bet <input v-model.number="cfg.base" type="number" min="0.2" :disabled="running" /></label>
-          <label class="fld sm">On-loss × <input v-model.number="cfg.factor" type="number" min="1" step="0.5" :disabled="running" /></label>
+          <label v-if="cfg.kind !== 'smart'" class="fld sm">On-loss × <input v-model.number="cfg.factor" type="number" min="1" step="0.5" :disabled="running" /></label>
+          <label v-else class="fld sm">Target win <input v-model.number="cfg.target" type="number" min="0.2" :disabled="running" /></label>
+        </div>
+        <div v-if="cfg.kind === 'smart'" class="row2">
+          <label class="fld sm">Payout (win ×) <input v-model.number="cfg.payout" type="number" min="1.05" step="0.05" :disabled="running" /></label>
+          <div class="fld sm">Next bet covers<b class="cover">€{{ (st.loss + (cfg.target || cfg.base)).toFixed(2) }} loss + target</b></div>
         </div>
         <div class="row2">
           <label class="fld sm">Max bet <input v-model.number="cfg.maxBet" type="number" :disabled="running" /></label>
@@ -166,6 +222,9 @@ onBeforeUnmount(() => clearInterval(timer))
           <button v-else class="btn stop full" @click="stop">⏹ Stop</button>
           <button class="btn btn-ghost" :disabled="running" @click="reset">Reset</button>
         </div>
+        <button class="btn btn-brand cmpbtn" :disabled="running || comparing" @click="compareAll">
+          {{ comparing ? 'Running audit…' : '⚡ Compare all strategies' }}
+        </button>
       </aside>
 
       <section class="results">
@@ -198,6 +257,20 @@ onBeforeUnmount(() => clearInterval(timer))
             <div v-if="!rounds.length" class="empty">Run a test to see every round here.</div>
           </div>
           <div v-if="rounds.length" class="logfoot">{{ rounds.length }} rounds recorded — scroll to review every bet</div>
+        </div>
+
+        <div v-if="compareResults.length" class="cmpwrap card">
+          <h3>Strategy comparison · {{ gmeta.label }} · 2,000 sessions each</h3>
+          <div class="cmphead"><span>Strategy</span><span>Ends +</span><span>Avg P/L</span><span>RTP</span><span>Bust</span><span>Worst</span></div>
+          <div v-for="r in compareResults" :key="r.name" class="cmprow">
+            <span class="nm">{{ r.name.split(' (')[0] }}</span>
+            <span>{{ r.endsPos.toFixed(0) }}%</span>
+            <span :class="r.avgPL >= 0 ? 'up' : 'down'">{{ (r.avgPL >= 0 ? '+' : '') + '€' + r.avgPL.toFixed(0) }}</span>
+            <span>{{ r.rtp.toFixed(1) }}%</span>
+            <span>{{ r.bust.toFixed(0) }}%</span>
+            <span class="down">€{{ r.worst.toFixed(0) }}</span>
+          </div>
+          <p class="cmpnote">Every strategy's average P/L is negative — no betting system beats the house edge. RTP is the same across strategies because the odds never change with bet size or history.</p>
         </div>
       </section>
     </div>
@@ -240,5 +313,16 @@ input[type=range] { padding: 0; }
 .logrow.sel { background: rgba(124,77,255,.22); outline: 1px solid var(--brand-2); border-radius: 6px; }
 .logfoot { color: var(--muted); font-size: 11.5px; text-align: center; padding: 8px 0 2px; border-top: 1px solid var(--line); margin-top: 4px; }
 .empty { color: var(--muted); text-align: center; padding: 20px; font-size: 13px; }
+.cmpbtn { width: 100%; padding: 11px; }
+.cover { display: block; color: var(--brand-2); font-size: 12px; margin-top: 2px; }
+.cmpwrap { padding: 14px 16px; }
+.cmpwrap h3 { margin: 0 0 12px; font-size: 14px; }
+.cmphead, .cmprow { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr 1fr; gap: 8px; font-size: 12.5px; padding: 7px 4px; align-items: center; }
+.cmphead { color: var(--muted); font-weight: 800; text-transform: uppercase; font-size: 10.5px; border-bottom: 1px solid var(--line); }
+.cmprow { border-bottom: 1px solid var(--line); }
+.cmprow .nm { font-weight: 700; }
+.cmprow .up { color: var(--green); font-weight: 700; } .cmprow .down { color: var(--red); font-weight: 700; }
+.cmpnote { color: var(--muted); font-size: 12px; margin: 12px 0 0; line-height: 1.5; }
 @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .cmphead, .cmprow { font-size: 11px; gap: 4px; } }
 </style>

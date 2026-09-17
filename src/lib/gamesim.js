@@ -38,18 +38,18 @@ function hilo() {
   return (dir === 'hi' ? n > c : n < c) ? pay : 0
 }
 
-// key -> { label (bet type used), sample() }
+// key -> { label, pay (display), winMult (typical win payout, for smart recovery), sample() }
 export const GAME_SIMS = {
-  coinflip:   { label: 'Coin Flip — heads', pay: '1.9× · 50%',  sample: () => (R() < 0.5 ? 1.9 : 0) },
-  dice:       { label: 'Turbo Dice — over 50', pay: '1.8× · 50%', sample: () => (R()*100 > 50 ? 1.8 : 0) },
-  roulette:   { label: 'Roulette — red', pay: '2× · 48.6%',      sample: () => (R_RED.has(R()*37|0) ? 2 : 0) },
-  wheel:      { label: 'Spin Fortune — red', pay: '2.16× · 41.7%', sample: () => (WHEEL[R()*24|0] === 'red' ? 2.16 : 0) },
-  dragontiger:{ label: 'Dragon Tiger — dragon', pay: '1.95× · 46%', sample: () => { const d=(R()*13|0)+1,t=(R()*13|0)+1; return d>t?1.95:0 } },
-  hilo:       { label: 'Hi-Lo — best side', pay: 'variable · ~55%', sample: hilo },
-  crash:      { label: 'Liftoff — cashout 2×', pay: '2× · ~44%',  sample: () => crash(2) },
-  plinko:     { label: 'Plinko Drop', pay: '0.35–10×',           sample: () => PLINKO[(() => { let r=0; for (let i=0;i<8;i++) if (R()<0.5) r++; return r })()] },
-  mines:      { label: 'Gem Hunt — 3 mines, 3 picks', pay: '1.34× · 67%', sample: () => mines(3, 3) },
-  slots:      { label: 'Rune Reels', pay: '0–500×',              sample: slot },
+  coinflip:   { label: 'Coin Flip — heads', pay: '1.9× · 50%',  winMult: 1.9,  sample: () => (R() < 0.5 ? 1.9 : 0) },
+  dice:       { label: 'Turbo Dice — over 50', pay: '1.8× · 50%', winMult: 1.8, sample: () => (R()*100 > 50 ? 1.8 : 0) },
+  roulette:   { label: 'Roulette — red', pay: '2× · 48.6%',      winMult: 2,    sample: () => (R_RED.has(R()*37|0) ? 2 : 0) },
+  wheel:      { label: 'Spin Fortune — red', pay: '2.16× · 41.7%', winMult: 2.16, sample: () => (WHEEL[R()*24|0] === 'red' ? 2.16 : 0) },
+  dragontiger:{ label: 'Dragon Tiger — dragon', pay: '1.95× · 46%', winMult: 1.95, sample: () => { const d=(R()*13|0)+1,t=(R()*13|0)+1; return d>t?1.95:0 } },
+  hilo:       { label: 'Hi-Lo — best side', pay: 'variable · ~55%', winMult: 1.6, sample: hilo },
+  crash:      { label: 'Liftoff — cashout 2×', pay: '2× · ~44%',  winMult: 2,    sample: () => crash(2) },
+  plinko:     { label: 'Plinko Drop', pay: '0.35–10×',           winMult: 2.5,  sample: () => PLINKO[(() => { let r=0; for (let i=0;i<8;i++) if (R()<0.5) r++; return r })()] },
+  mines:      { label: 'Gem Hunt — 3 mines, 3 picks', pay: '1.34× · 67%', winMult: 1.34, sample: () => mines(3, 3) },
+  slots:      { label: 'Rune Reels', pay: '0–500×',              winMult: 8,    sample: slot },
 }
 
 export const GAME_LIST = [
