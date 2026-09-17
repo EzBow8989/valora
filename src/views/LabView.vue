@@ -10,12 +10,14 @@ const speed = ref(20) // rounds per tick
 
 const running = ref(false)
 const st = reactive({ round: 0, balance: 1000, bet: 5, wins: 0, losses: 0, lossStreak: 0, maxLossStreak: 0, capHits: 0, bust: false, wagered: 0, paid: 0, peak: 1000, trough: 1000 })
-const log = ref([])
+const rounds = ref([])            // full chronological record of every bet
+const selectedRound = ref(null)   // round highlighted from a chart click
 let history = []
 let timer = 0
 let s = { bet: 5, won: false, fi: 0 }
 
 const chart = ref(null)
+const logbody = ref(null)
 const gmeta = computed(() => GAME_SIMS[game.value])
 const rtp = computed(() => (st.wagered ? (st.paid / st.wagered) * 100 : 0))
 const pl = computed(() => st.balance - cfg.startBalance)
@@ -31,7 +33,8 @@ function reset() {
   Object.assign(st, { round: 0, balance: cfg.startBalance, bet: cfg.base, wins: 0, losses: 0, lossStreak: 0, maxLossStreak: 0, capHits: 0, bust: false, wagered: 0, paid: 0, peak: cfg.startBalance, trough: cfg.startBalance })
   s = { bet: cfg.base, won: false, fi: 0 }
   history = [cfg.startBalance]
-  log.value = []
+  rounds.value = []
+  selectedRound.value = null
   nextTick(draw)
 }
 
@@ -50,8 +53,7 @@ function step() {
   st.round++
   st.peak = Math.max(st.peak, st.balance); st.trough = Math.min(st.trough, st.balance)
   history.push(st.balance)
-  log.value.unshift({ r: st.round, bet, mult, ret, won: s.won, bal: st.balance })
-  if (log.value.length > 14) log.value.pop()
+  rounds.value.push({ r: st.round, bet, mult, ret, won: s.won, bal: st.balance })
   s.bet = nextBet(cfg, { ...s, bet })
   st.bet = s.bet > cfg.maxBet ? cfg.base : Math.max(cfg.base, s.bet)
   return true
@@ -66,9 +68,25 @@ function start() {
       if (!step()) { stop(); break }
     }
     draw()
+    if (running.value && logbody.value) logbody.value.scrollTop = logbody.value.scrollHeight
   }, 32)
 }
 function stop() { clearInterval(timer); running.value = false }
+
+// Click the chart to jump to that round in the record.
+function onChartClick(e) {
+  if (!rounds.value.length) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+  const idx = Math.round(frac * (history.length - 1)) // history[0] = start
+  const r = Math.max(1, Math.min(rounds.value.length, idx))
+  selectedRound.value = r
+  draw()
+  nextTick(() => {
+    const el = logbody.value?.querySelector('.logrow.sel')
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  })
+}
 
 function draw() {
   const cv = chart.value; if (!cv) return
@@ -90,6 +108,12 @@ function draw() {
   // fill
   ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath()
   ctx.fillStyle = (pl.value >= 0 ? 'rgba(52,211,153,' : 'rgba(248,113,113,') + '0.12)'; ctx.fill()
+  // selected-round marker
+  if (selectedRound.value != null && selectedRound.value < n) {
+    const mx = x(selectedRound.value), my = y(history[selectedRound.value])
+    ctx.strokeStyle = '#b47bff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(mx, 0); ctx.lineTo(mx, h); ctx.stroke()
+    ctx.fillStyle = '#b47bff'; ctx.beginPath(); ctx.arc(mx, my, 4, 0, Math.PI * 2); ctx.fill()
+  }
 }
 
 reset()
@@ -158,18 +182,22 @@ onBeforeUnmount(() => clearInterval(timer))
 
         <div v-if="st.bust" class="bust">💥 Bankroll couldn't cover the next bet — strategy busted at round {{ st.round }}.</div>
 
-        <div class="chartwrap card"><canvas ref="chart"></canvas></div>
+        <div class="chartwrap card"><canvas ref="chart" @click="onChartClick"></canvas></div>
+        <p class="charthint">💡 Click anywhere on the graph to jump to that exact bet below.</p>
 
         <div class="logwrap card">
           <div class="loghead"><span>#</span><span>Bet</span><span>Result</span><span>Return</span><span>Balance</span></div>
-          <div v-for="l in log" :key="l.r" class="logrow" :class="l.won ? 'w' : 'l'">
-            <span>{{ l.r }}</span>
-            <span>€{{ l.bet.toFixed(2) }}</span>
-            <span>{{ l.mult.toFixed(2) }}× {{ l.won ? 'WIN' : 'loss' }}</span>
-            <span>€{{ l.ret.toFixed(2) }}</span>
-            <span>€{{ l.bal.toFixed(2) }}</span>
+          <div ref="logbody" class="logbody">
+            <div v-for="l in rounds" :key="l.r" class="logrow" :class="[l.won ? 'w' : 'l', { sel: l.r === selectedRound }]">
+              <span>{{ l.r }}</span>
+              <span>€{{ l.bet.toFixed(2) }}</span>
+              <span>{{ l.mult.toFixed(2) }}× {{ l.won ? 'WIN' : 'loss' }}</span>
+              <span>€{{ l.ret.toFixed(2) }}</span>
+              <span>€{{ l.bal.toFixed(2) }}</span>
+            </div>
+            <div v-if="!rounds.length" class="empty">Run a test to see every round here.</div>
           </div>
-          <div v-if="!log.length" class="empty">Run a test to see round-by-round results.</div>
+          <div v-if="rounds.length" class="logfoot">{{ rounds.length }} rounds recorded — scroll to review every bet</div>
         </div>
       </section>
     </div>
@@ -201,12 +229,16 @@ input[type=range] { padding: 0; }
 .stat .up { color: var(--green); } .stat .down { color: var(--red); }
 .bust { background: rgba(248,113,113,.14); border: 1px solid rgba(248,113,113,.4); color: var(--red); border-radius: 10px; padding: 10px 14px; font-weight: 700; font-size: 13.5px; }
 .chartwrap { padding: 10px; height: 240px; }
-.chartwrap canvas { width: 100%; height: 100%; display: block; }
+.chartwrap canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+.charthint { color: var(--muted); font-size: 12px; margin: -6px 0 0; text-align: center; }
 .logwrap { padding: 8px 12px; }
-.loghead, .logrow { display: grid; grid-template-columns: 40px 1fr 1.4fr 1fr 1.2fr; gap: 8px; font-size: 12.5px; padding: 6px 4px; }
+.loghead, .logrow { display: grid; grid-template-columns: 44px 1fr 1.4fr 1fr 1.2fr; gap: 8px; font-size: 12.5px; padding: 6px 4px; }
 .loghead { color: var(--muted); font-weight: 800; border-bottom: 1px solid var(--line); text-transform: uppercase; font-size: 10.5px; }
-.logrow { border-bottom: 1px solid var(--line); }
+.logbody { max-height: 340px; overflow-y: auto; scrollbar-width: thin; }
+.logrow { border-bottom: 1px solid var(--line); scroll-margin: 60px; }
 .logrow.w { color: var(--green); } .logrow.l { color: var(--muted); }
+.logrow.sel { background: rgba(124,77,255,.22); outline: 1px solid var(--brand-2); border-radius: 6px; }
+.logfoot { color: var(--muted); font-size: 11.5px; text-align: center; padding: 8px 0 2px; border-top: 1px solid var(--line); margin-top: 4px; }
 .empty { color: var(--muted); text-align: center; padding: 20px; font-size: 13px; }
 @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, 1fr); } }
 </style>
