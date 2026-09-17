@@ -24,6 +24,12 @@ const logbody = ref(null)
 const gmeta = computed(() => GAME_SIMS[game.value])
 const rtp = computed(() => (st.wagered ? (st.paid / st.wagered) * 100 : 0))
 const pl = computed(() => st.balance - cfg.startBalance)
+const hintText = computed(() => ({
+  flat: 'Bets the same amount every round',
+  paroli: 'Doubles on a win, resets on a loss',
+  fibonacci: 'Steps up 1·1·2·3·5·8… on losses',
+  dalembert: '+1 unit on loss, −1 unit on win',
+}[cfg.kind] || ''))
 
 function applyNl() {
   const p = parseStrategy(nl.value)
@@ -59,7 +65,8 @@ function step() {
   st.peak = Math.max(st.peak, st.balance); st.trough = Math.min(st.trough, st.balance)
   history.push(st.balance)
   rounds.value.push({ r: st.round, bet, mult, ret, won: s.won, bal: st.balance })
-  s.bet = nextBet(cfg, { ...s, bet })
+  s.bet = bet                    // record the just-played bet on the real state
+  s.bet = nextBet(cfg, s)        // pass real state so Fibonacci's index persists
   st.bet = s.bet > cfg.maxBet ? cfg.base : Math.max(cfg.base, s.bet)
   return true
 }
@@ -111,7 +118,8 @@ function headlessSession(sampler, kind, roundsN) {
     ls.won = ret >= bet
     ls.loss = ls.won ? 0 : ls.loss + bet
     if (ls.won) streak = 0; else { streak++; if (streak > maxStreak) maxStreak = streak }
-    ls.bet = nextBet(c, { ...ls, bet })
+    ls.bet = bet
+    ls.bet = nextBet(c, ls)
   }
   return { profit: bal - cfg.startBalance, wag, paid, maxStreak, bust }
 }
@@ -203,7 +211,7 @@ onBeforeUnmount(() => clearInterval(timer))
           <label class="fld sm">Base bet <input v-model.number="cfg.base" type="number" min="0.2" :disabled="running" /></label>
           <label v-if="cfg.kind === 'martingale' || cfg.kind === 'custom'" class="fld sm">On-loss × <input v-model.number="cfg.factor" type="number" min="1" step="0.5" :disabled="running" /></label>
           <label v-else-if="cfg.kind === 'smart'" class="fld sm">Target win <input v-model.number="cfg.target" type="number" min="0.2" :disabled="running" /></label>
-          <div v-else class="fld sm hintcell">Bets the same amount every round</div>
+          <div v-else class="fld sm hintcell">{{ hintText }}</div>
         </div>
         <div v-if="cfg.kind === 'smart'" class="row2">
           <label class="fld sm">Payout (win ×) <input v-model.number="cfg.payout" type="number" min="1.05" step="0.05" :disabled="running" /></label>
