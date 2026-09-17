@@ -29,6 +29,7 @@ const promo = [
       </router-link>
 
       <div class="hr"></div>
+      <router-link to="/lab" class="item"><span class="ic">🧪</span>Strategy Lab</router-link>
       <router-link to="/wallet" class="item"><span class="ic">💳</span>Wallet</router-link>
       <router-link to="/account" class="item"><span class="ic">⚙️</span>Account</router-link>
     </nav>

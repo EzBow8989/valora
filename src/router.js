@@ -12,6 +12,7 @@ const routes = [
   { path: '/wallet', name: 'wallet', component: () => import('./views/WalletView.vue'), meta: { auth: true } },
   { path: '/account', name: 'account', component: () => import('./views/AccountView.vue'), meta: { auth: true } },
   { path: '/support', name: 'support', component: () => import('./views/SupportView.vue'), meta: { title: 'Help Center' } },
+  { path: '/lab', name: 'lab', component: () => import('./views/LabView.vue'), meta: { title: 'Strategy Lab' } },
   // category / legacy paths
   { path: '/instant', redirect: '/games' },
   { path: '/slots', redirect: '/games/slots' },
