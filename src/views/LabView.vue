@@ -201,8 +201,9 @@ onBeforeUnmount(() => clearInterval(timer))
         </div>
         <div class="row2">
           <label class="fld sm">Base bet <input v-model.number="cfg.base" type="number" min="0.2" :disabled="running" /></label>
-          <label v-if="cfg.kind !== 'smart'" class="fld sm">On-loss × <input v-model.number="cfg.factor" type="number" min="1" step="0.5" :disabled="running" /></label>
-          <label v-else class="fld sm">Target win <input v-model.number="cfg.target" type="number" min="0.2" :disabled="running" /></label>
+          <label v-if="cfg.kind === 'martingale' || cfg.kind === 'custom'" class="fld sm">On-loss × <input v-model.number="cfg.factor" type="number" min="1" step="0.5" :disabled="running" /></label>
+          <label v-else-if="cfg.kind === 'smart'" class="fld sm">Target win <input v-model.number="cfg.target" type="number" min="0.2" :disabled="running" /></label>
+          <div v-else class="fld sm hintcell">Bets the same amount every round</div>
         </div>
         <div v-if="cfg.kind === 'smart'" class="row2">
           <label class="fld sm">Payout (win ×) <input v-model.number="cfg.payout" type="number" min="1.05" step="0.05" :disabled="running" /></label>
@@ -285,6 +286,7 @@ onBeforeUnmount(() => clearInterval(timer))
 .panel { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .fld { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); font-weight: 700; min-width: 0; }
 .fld.sm { font-size: 11.5px; }
+.hintcell { justify-content: flex-end; color: var(--muted); font-weight: 600; font-size: 11px; line-height: 1.3; padding-bottom: 9px; }
 select, input, textarea { width: 100%; min-width: 0; box-sizing: border-box; background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; color: var(--text); font-size: 14px; outline: none; font-family: inherit; }
 select:focus, input:focus, textarea:focus { border-color: var(--brand); }
 input[type=range] { padding: 0; }
