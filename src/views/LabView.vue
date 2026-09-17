@@ -182,14 +182,14 @@ onBeforeUnmount(() => clearInterval(timer))
 .head p { color: var(--muted); margin: 0 0 18px; font-size: 13.5px; }
 .grid { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
 .panel { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-.fld { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); font-weight: 700; }
+.fld { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); font-weight: 700; min-width: 0; }
 .fld.sm { font-size: 11.5px; }
-select, input, textarea { background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; color: var(--text); font-size: 14px; outline: none; font-family: inherit; }
+select, input, textarea { width: 100%; min-width: 0; box-sizing: border-box; background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; color: var(--text); font-size: 14px; outline: none; font-family: inherit; }
 select:focus, input:focus, textarea:focus { border-color: var(--brand); }
 input[type=range] { padding: 0; }
 .gnote { color: var(--brand-2); font-size: 12px; margin: -2px 0 4px; font-weight: 700; }
 .sm { font-size: 12.5px; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .actions { display: flex; gap: 8px; margin-top: 4px; }
 .full { flex: 1; padding: 12px; }
 .stop { background: linear-gradient(135deg,#fb7185,#be123c); color: #fff; }
